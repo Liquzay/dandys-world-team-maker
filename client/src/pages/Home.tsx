@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { TOONS, TRINKETS, TRINKET_CATEGORIES } from "@/data/characters";
+import { useState, useRef } from "react";
+import { TOONS, TRINKETS } from "@/data/characters";
 import { Button } from "@/components/ui/button";
 import { X, Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -12,41 +12,12 @@ interface ToonWithTrinkets {
 
 export default function Home() {
   const [team, setTeam] = useState<ToonWithTrinkets[]>([]);
-  const [holdingToon, setHoldingToon] = useState<string | null>(null);
-  const [showTrinketModal, setShowTrinketModal] = useState(false);
-  const [selectedTrinkets, setSelectedTrinkets] = useState<string[]>([]);
+  const [editingToonIndex, setEditingToonIndex] = useState<number | null>(null);
+  const [tempTrinkets, setTempTrinkets] = useState<string[]>([]);
   const [trinketSearch, setTrinketSearch] = useState("");
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const longPressTriggered = useRef(false);
 
-  const handleToonPointerDown = (toonId: string, toonName: string) => {
-    longPressTriggered.current = false;
-    longPressTimer.current = setTimeout(() => {
-      longPressTriggered.current = true;
-      setHoldingToon(toonId);
-      setShowTrinketModal(true);
-      setSelectedTrinkets([]);
-      setTrinketSearch("");
-    }, 500);
-  };
-
-  const handleToonPointerUp = (e: React.PointerEvent) => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
-
-  const handleToonClick = (e: React.MouseEvent, toonId: string, toonName: string) => {
-    // If long-press was triggered, don't add toon on click
-    if (longPressTriggered.current) {
-      longPressTriggered.current = false;
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-
-    // Add toon to team with no trinkets
+  // Add a new toon to the team
+  const addToon = (toonId: string, toonName: string) => {
     const newToon: ToonWithTrinkets = {
       toonId,
       toonName,
@@ -56,48 +27,64 @@ export default function Home() {
     toast.success(`Added ${toonName} to team!`);
   };
 
-  const addTrinketToToon = (trinketId: string) => {
-    if (!holdingToon) return;
+  // Open trinket editor for a specific toon
+  const openTrinketEditor = (index: number) => {
+    setEditingToonIndex(index);
+    setTempTrinkets([...team[index].trinkets]);
+    setTrinketSearch("");
+  };
 
-    setSelectedTrinkets((prev) => {
+  // Close trinket editor
+  const closeTrinketEditor = () => {
+    setEditingToonIndex(null);
+    setTempTrinkets([]);
+    setTrinketSearch("");
+  };
+
+  // Toggle trinket selection
+  const toggleTrinket = (trinketId: string) => {
+    setTempTrinkets((prev) => {
       if (prev.includes(trinketId)) {
         return prev.filter((id) => id !== trinketId);
+      }
+      // Limit to 2 trinkets
+      if (prev.length >= 2) {
+        toast.error("Maximum 2 trinkets per Toon!");
+        return prev;
       }
       return [...prev, trinketId];
     });
   };
 
-  const confirmTrinkets = () => {
-    if (!holdingToon) return;
+  // Save trinkets for the edited toon
+  const saveTrinkets = () => {
+    if (editingToonIndex === null) return;
 
     setTeam((prev) =>
-      prev.map((toon) =>
-        toon.toonId === holdingToon
-          ? { ...toon, trinkets: selectedTrinkets }
-          : toon
+      prev.map((toon, i) =>
+        i === editingToonIndex ? { ...toon, trinkets: tempTrinkets } : toon
       )
     );
 
-    const trinketNames = selectedTrinkets
+    const trinketNames = tempTrinkets
       .map((id) => TRINKETS.find((t) => t.id === id)?.name)
-      .filter(Boolean)
-      .join(", ");
+      .filter(Boolean);
 
     toast.success(
-      `Added ${selectedTrinkets.length} trinket(s) to ${TOONS.find((t) => t.id === holdingToon)?.name}!`
+      `Updated ${team[editingToonIndex].toonName} with ${tempTrinkets.length} trinket(s)!`
     );
 
-    setShowTrinketModal(false);
-    setHoldingToon(null);
-    setSelectedTrinkets([]);
+    closeTrinketEditor();
   };
 
+  // Remove a toon from the team
   const removeToon = (index: number) => {
     const toonName = team[index].toonName;
     setTeam((prev) => prev.filter((_, i) => i !== index));
     toast.success(`Removed ${toonName} from team`);
   };
 
+  // Copy full team to clipboard
   const copyTeamToClipboard = () => {
     const teamText = team
       .map((toon) => {
@@ -114,20 +101,16 @@ export default function Home() {
     toast.success("Team copied to clipboard!");
   };
 
+  // Clear entire team
   const clearTeam = () => {
     setTeam([]);
     toast.success("Team cleared");
   };
 
+  // Filter trinkets based on search
   const filteredTrinkets = TRINKETS.filter((trinket) =>
     trinket.name.toLowerCase().includes(trinketSearch.toLowerCase())
   );
-
-  const closeModal = () => {
-    setShowTrinketModal(false);
-    setHoldingToon(null);
-    setSelectedTrinkets([]);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#2D0A4E] via-[#1a0033] to-[#0f001a]">
@@ -156,7 +139,7 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-[#00FFFF] text-lg font-semibold">Pick Your Dream Dandy's World Squad!</p>
-          <p className="text-gray-400 text-sm mt-2">Click to add Toon • Hold to add Trinkets • Copy to paste in game</p>
+          <p className="text-gray-400 text-sm mt-2">Click Toon to add • Click Edit Trinkets to add items • Copy to paste in game</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -170,18 +153,14 @@ export default function Home() {
                 {TOONS.map((toon) => (
                   <button
                     key={toon.id}
-                    onPointerDown={() => handleToonPointerDown(toon.id, toon.name)}
-                    onPointerUp={handleToonPointerUp}
-                    onPointerCancel={handleToonPointerUp}
-                    onClick={(e) => handleToonClick(e, toon.id, toon.name)}
-                    className="relative group p-3 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] hover:border-[#FF1493] transition-all duration-200 hover:shadow-lg hover:shadow-[#FF1493]/50 transform hover:scale-105 active:scale-95 touch-manipulation"
+                    onClick={() => addToon(toon.id, toon.name)}
+                    className="relative group p-3 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] hover:border-[#FF1493] transition-all duration-200 hover:shadow-lg hover:shadow-[#FF1493]/50 transform hover:scale-105 active:scale-95"
                   >
                     <div className="text-center">
                       <div className="text-2xl mb-1">🎪</div>
                       <p className="text-xs font-semibold text-[#00FFFF] group-hover:text-[#FF1493] transition-colors truncate">
                         {toon.name}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">Hold for trinkets</p>
                     </div>
                   </button>
                 ))}
@@ -198,7 +177,7 @@ export default function Home() {
             {team.length === 0 ? (
               <div className="p-8 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#2D0A4E] text-center">
                 <p className="text-gray-400 text-lg">No Toons selected yet.</p>
-                <p className="text-gray-500 text-sm mt-2">Click a Toon to add it, or hold to add Trinkets!</p>
+                <p className="text-gray-500 text-sm mt-2">Click a Toon on the left to add it to your team!</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -219,7 +198,7 @@ export default function Home() {
                             <h3 className="text-lg font-bold text-[#FF1493]">{toon.toonName}</h3>
                             {trinketNames.length > 0 && (
                               <p className="text-xs text-gray-400 mt-1">
-                                {trinketNames.length} trinket{trinketNames.length !== 1 ? "s" : ""}
+                                {trinketNames.length}/2 trinkets
                               </p>
                             )}
                           </div>
@@ -243,10 +222,8 @@ export default function Home() {
 
                         <div className="flex gap-2">
                           <button
-                            onPointerDown={() => handleToonPointerDown(toon.toonId, toon.toonName)}
-                            onPointerUp={handleToonPointerUp}
-                            onPointerCancel={handleToonPointerUp}
-                            className="flex-1 px-3 py-2 rounded-lg bg-[#00FFFF]/20 hover:bg-[#00FFFF]/40 text-[#00FFFF] text-xs font-semibold transition-colors touch-manipulation"
+                            onClick={() => openTrinketEditor(index)}
+                            className="flex-1 px-3 py-2 rounded-lg bg-[#00FFFF]/20 hover:bg-[#00FFFF]/40 text-[#00FFFF] text-xs font-semibold transition-colors"
                           >
                             Edit Trinkets
                           </button>
@@ -290,10 +267,10 @@ export default function Home() {
       </div>
 
       {/* Trinket Selection Modal */}
-      {showTrinketModal && (
+      {editingToonIndex !== null && (
         <div 
           className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={closeModal}
+          onClick={closeTrinketEditor}
         >
           <div 
             className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] rounded-lg shadow-2xl shadow-[#00FFFF]/50 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col"
@@ -302,10 +279,10 @@ export default function Home() {
             {/* Header */}
             <div className="p-6 border-b border-[#2D0A4E] flex items-center justify-between">
               <h2 className="text-2xl font-bold text-[#FF1493]">
-                Select Trinkets for {TOONS.find((t) => t.id === holdingToon)?.name}
+                Trinkets for {team[editingToonIndex]?.toonName}
               </h2>
               <button
-                onClick={closeModal}
+                onClick={closeTrinketEditor}
                 className="p-2 hover:bg-[#2D0A4E] rounded-lg transition-colors"
               >
                 <X size={24} className="text-[#FF1493]" />
@@ -329,9 +306,9 @@ export default function Home() {
                 {filteredTrinkets.map((trinket) => (
                   <button
                     key={trinket.id}
-                    onClick={() => addTrinketToToon(trinket.id)}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      selectedTrinkets.includes(trinket.id)
+                    onClick={() => toggleTrinket(trinket.id)}
+                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                      tempTrinkets.includes(trinket.id)
                         ? "border-[#FF1493] bg-[#FF1493]/20 shadow-lg shadow-[#FF1493]/50"
                         : "border-[#00FF00] bg-gradient-to-br from-[#0f001a] to-[#1a0033] hover:border-[#00FFFF]"
                     }`}
@@ -340,7 +317,7 @@ export default function Home() {
                       <div className="text-2xl mb-2">💎</div>
                       <p className="text-xs font-semibold text-[#00FF00]">{trinket.name}</p>
                       <p className="text-xs text-gray-500 mt-1">{trinket.category}</p>
-                      {selectedTrinkets.includes(trinket.id) && (
+                      {tempTrinkets.includes(trinket.id) && (
                         <div className="text-xs text-[#FF1493] font-bold mt-2">✓ Selected</div>
                       )}
                     </div>
@@ -352,16 +329,16 @@ export default function Home() {
             {/* Footer */}
             <div className="p-6 border-t border-[#2D0A4E] flex gap-3">
               <Button
-                onClick={closeModal}
-                className="flex-1 bg-[#2D0A4E] hover:bg-[#3D1A5E] text-white font-bold px-6 py-2 rounded-lg transition-all"
+                onClick={closeTrinketEditor}
+                className="flex-1 bg-[#2D0A4E] hover:bg-[#3D1A5E] text-white font-bold px-6 py-2 rounded-lg transition-all cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
-                onClick={confirmTrinkets}
-                className="flex-1 bg-gradient-to-r from-[#FF1493] to-[#FF69B4] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70"
+                onClick={saveTrinkets}
+                className="flex-1 bg-gradient-to-r from-[#FF1493] to-[#FF69B4] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70 cursor-pointer"
               >
-                Confirm ({selectedTrinkets.length})
+                Save ({tempTrinkets.length}/2)
               </Button>
             </div>
           </div>

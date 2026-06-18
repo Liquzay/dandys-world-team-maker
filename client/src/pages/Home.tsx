@@ -84,6 +84,18 @@ export default function Home() {
     toast.success(`Removed ${toonName} from team`);
   };
 
+  // Duplicate a toon with the same trinkets
+  const dupeToon = (index: number) => {
+    const toonToDupe = team[index];
+    const newToon: ToonWithTrinkets = {
+      toonId: toonToDupe.toonId,
+      toonName: toonToDupe.toonName,
+      trinkets: [...toonToDupe.trinkets],
+    };
+    setTeam([...team, newToon]);
+    toast.success(`Duplicated ${toonToDupe.toonName}!`);
+  };
+
   // Copy full team to clipboard
   const copyTeamToClipboard = () => {
     const teamText = team
@@ -226,6 +238,13 @@ export default function Home() {
                             className="flex-1 px-3 py-2 rounded-lg bg-[#00FFFF]/20 hover:bg-[#00FFFF]/40 text-[#00FFFF] text-xs font-semibold transition-colors"
                           >
                             Edit Trinkets
+                          </button>
+                          <button
+                            onClick={() => dupeToon(index)}
+                            className="px-3 py-2 rounded-lg bg-[#00FF00]/20 hover:bg-[#00FF00]/40 text-[#00FF00] transition-colors font-semibold text-xs"
+                            title="Duplicate this Toon with same trinkets"
+                          >
+                            Dupe
                           </button>
                           <button
                             onClick={() => {

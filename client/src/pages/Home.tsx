@@ -84,16 +84,19 @@ export default function Home() {
     toast.success(`Removed ${toonName} from team`);
   };
 
-  // Duplicate a toon with the same trinkets
+  // Duplicate a toon 3x with the same trinkets
   const dupeToon = (index: number) => {
     const toonToDupe = team[index];
-    const newToon: ToonWithTrinkets = {
-      toonId: toonToDupe.toonId,
-      toonName: toonToDupe.toonName,
-      trinkets: [...toonToDupe.trinkets],
-    };
-    setTeam([...team, newToon]);
-    toast.success(`Duplicated ${toonToDupe.toonName}!`);
+    const newToons: ToonWithTrinkets[] = [];
+    for (let i = 0; i < 3; i++) {
+      newToons.push({
+        toonId: toonToDupe.toonId,
+        toonName: toonToDupe.toonName,
+        trinkets: [...toonToDupe.trinkets],
+      });
+    }
+    setTeam([...team, ...newToons]);
+    toast.success(`Added 3x ${toonToDupe.toonName}!`);
   };
 
   // Copy full team to clipboard
@@ -242,9 +245,9 @@ export default function Home() {
                           <button
                             onClick={() => dupeToon(index)}
                             className="px-3 py-2 rounded-lg bg-[#00FF00]/20 hover:bg-[#00FF00]/40 text-[#00FF00] transition-colors font-semibold text-xs"
-                            title="Duplicate this Toon with same trinkets"
+                            title="Add 3x this Toon with same trinkets"
                           >
-                            Dupe
+                            3x
                           </button>
                           <button
                             onClick={() => {

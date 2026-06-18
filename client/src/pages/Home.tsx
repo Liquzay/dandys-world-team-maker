@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TOONS, TRINKETS } from "@/data/characters";
 import { Button } from "@/components/ui/button";
-import { X, Copy, Trash2, Plus, Minus } from "lucide-react";
+import { X, Copy, Trash2, Plus, Minus, Folder, Save } from "lucide-react";
 import { toast } from "sonner";
 
 interface ToonWithTrinkets {
@@ -18,6 +18,27 @@ export default function Home() {
   const [trinketSearch, setTrinketSearch] = useState("");
   const [atStartText, setAtStartText] = useState("");
   const [showAtStartModal, setShowAtStartModal] = useState(false);
+  const [savedLayouts, setSavedLayouts] = useState<Array<{id: string; name: string; team: ToonWithTrinkets[]; atStartText: string}>>([]);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [saveName, setSaveName] = useState("");
+
+  // Load saved layouts from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("dandyTeamLayouts");
+    if (saved) {
+      try {
+        setSavedLayouts(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to load layouts", e);
+      }
+    }
+  }, []);
+
+  // Save layouts to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("dandyTeamLayouts", JSON.stringify(savedLayouts));
+  }, [savedLayouts]);
 
   // Add a new toon to the team
   const addToon = (toonId: string, toonName: string) => {
@@ -129,6 +150,38 @@ export default function Home() {
   const clearTeam = () => {
     setTeam([]);
     toast.success("Team cleared");
+  };
+
+  // Save current team as a layout
+  const saveLayout = () => {
+    if (!saveName.trim()) {
+      toast.error("Please enter a layout name");
+      return;
+    }
+    const newLayout = {
+      id: Date.now().toString(),
+      name: saveName,
+      team: team,
+      atStartText: atStartText,
+    };
+    setSavedLayouts([...savedLayouts, newLayout]);
+    setSaveName("");
+    setShowSaveModal(false);
+    toast.success(`Layout "${saveName}" saved!`);
+  };
+
+  // Load a saved layout
+  const loadLayout = (layout: typeof savedLayouts[0]) => {
+    setTeam(layout.team);
+    setAtStartText(layout.atStartText);
+    setShowLoadModal(false);
+    toast.success(`Loaded layout "${layout.name}"!`);
+  };
+
+  // Delete a saved layout
+  const deleteLayout = (id: string) => {
+    setSavedLayouts(savedLayouts.filter((layout) => layout.id !== id));
+    toast.success("Layout deleted");
   };
 
   // Filter trinkets based on search
@@ -297,7 +350,19 @@ export default function Home() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 mt-6">
+                <div className="flex gap-3 mt-6 flex-wrap">
+                  <Button
+                    onClick={() => setShowLoadModal(true)}
+                    className="bg-gradient-to-r from-[#00FFFF] to-[#00FF00] hover:from-[#00FF00] hover:to-[#00FFFF] text-[#0f001a] font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#00FFFF]/50 transition-all hover:shadow-[#00FFFF]/70 flex items-center justify-center gap-2"
+                  >
+                    <Folder size={18} /> Load
+                  </Button>
+                  <Button
+                    onClick={() => setShowSaveModal(true)}
+                    className="bg-gradient-to-r from-[#00FFFF] to-[#00FF00] hover:from-[#00FF00] hover:to-[#00FFFF] text-[#0f001a] font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#00FFFF]/50 transition-all hover:shadow-[#00FFFF]/70 flex items-center justify-center gap-2"
+                  >
+                    <Save size={18} /> Save
+                  </Button>
                   <Button
                     onClick={() => setShowAtStartModal(true)}
                     className="bg-gradient-to-r from-[#FF69B4] to-[#FF1493] hover:from-[#FF1493] hover:to-[#FF69B4] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70 flex items-center justify-center gap-2"
@@ -453,6 +518,107 @@ export default function Home() {
               >
                 Save
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Layout Modal */}
+      {showSaveModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowSaveModal(false)}
+        >
+          <div 
+            className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] rounded-lg shadow-2xl shadow-[#00FFFF]/50 max-w-md w-full overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-[#2D0A4E] flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-[#00FFFF]">Save Layout</h2>
+              <button
+                onClick={() => setShowSaveModal(false)}
+                className="p-2 hover:bg-[#2D0A4E] rounded-lg transition-colors"
+              >
+                <X size={24} className="text-[#00FFFF]" />
+              </button>
+            </div>
+            <div className="p-6 flex-1">
+              <input
+                type="text"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder="e.g., Dandy Run"
+                className="w-full px-4 py-2 rounded-lg bg-[#0f001a] border border-[#2D0A4E] text-white placeholder-gray-500 focus:border-[#00FFFF] focus:outline-none"
+                onKeyPress={(e) => e.key === "Enter" && saveLayout()}
+              />
+            </div>
+            <div className="p-6 border-t border-[#2D0A4E] flex gap-3">
+              <Button
+                onClick={() => setShowSaveModal(false)}
+                className="flex-1 bg-[#2D0A4E] hover:bg-[#3D1A5E] text-white font-bold px-6 py-2 rounded-lg transition-all cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={saveLayout}
+                className="flex-1 bg-gradient-to-r from-[#00FFFF] to-[#00FF00] hover:from-[#00FF00] hover:to-[#00FFFF] text-[#0f001a] font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#00FFFF]/50 transition-all hover:shadow-[#00FFFF]/70 cursor-pointer"
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Load Layout Modal */}
+      {showLoadModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowLoadModal(false)}
+        >
+          <div 
+            className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] rounded-lg shadow-2xl shadow-[#00FFFF]/50 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-[#2D0A4E] flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-[#00FFFF]">Load Layout</h2>
+              <button
+                onClick={() => setShowLoadModal(false)}
+                className="p-2 hover:bg-[#2D0A4E] rounded-lg transition-colors"
+              >
+                <X size={24} className="text-[#00FFFF]" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-2">
+              {savedLayouts.length === 0 ? (
+                <p className="text-gray-400 text-center py-8">No saved layouts yet.</p>
+              ) : (
+                savedLayouts.map((layout) => (
+                  <div
+                    key={layout.id}
+                    className="p-4 rounded-lg bg-gradient-to-br from-[#0f001a] to-[#1a0033] border border-[#00FFFF]/30 hover:border-[#00FFFF] transition-all flex items-center justify-between group"
+                  >
+                    <div className="flex-1">
+                      <p className="text-[#00FFFF] font-semibold">{layout.name}</p>
+                      <p className="text-xs text-gray-500">{layout.team.length} Toons</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => loadLayout(layout)}
+                        className="px-3 py-1 rounded-lg bg-[#00FFFF]/20 hover:bg-[#00FFFF]/40 text-[#00FFFF] text-xs font-semibold transition-colors"
+                      >
+                        Load
+                      </button>
+                      <button
+                        onClick={() => deleteLayout(layout.id)}
+                        className="px-3 py-1 rounded-lg bg-[#FF1493]/20 hover:bg-[#FF1493]/40 text-[#FF1493] text-xs font-semibold transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

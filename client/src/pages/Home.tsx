@@ -1,13 +1,14 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { TOONS, TRINKETS } from "@/data/characters";
 import { Button } from "@/components/ui/button";
-import { X, Copy, Trash2 } from "lucide-react";
+import { X, Copy, Trash2, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 
 interface ToonWithTrinkets {
   toonId: string;
   toonName: string;
   trinkets: string[]; // trinket IDs
+  count: number; // 1-8x multiplier
 }
 
 export default function Home() {
@@ -22,9 +23,20 @@ export default function Home() {
       toonId,
       toonName,
       trinkets: [],
+      count: 1,
     };
     setTeam([...team, newToon]);
     toast.success(`Added ${toonName} to team!`);
+  };
+
+  // Update toon count (1-8x)
+  const updateToonCount = (index: number, newCount: number) => {
+    if (newCount < 1 || newCount > 8) return;
+    setTeam((prev) =>
+      prev.map((toon, i) =>
+        i === index ? { ...toon, count: newCount } : toon
+      )
+    );
   };
 
   // Open trinket editor for a specific toon
@@ -84,21 +96,6 @@ export default function Home() {
     toast.success(`Removed ${toonName} from team`);
   };
 
-  // Duplicate a toon 3x with the same trinkets
-  const dupeToon = (index: number) => {
-    const toonToDupe = team[index];
-    const newToons: ToonWithTrinkets[] = [];
-    for (let i = 0; i < 3; i++) {
-      newToons.push({
-        toonId: toonToDupe.toonId,
-        toonName: toonToDupe.toonName,
-        trinkets: [...toonToDupe.trinkets],
-      });
-    }
-    setTeam([...team, ...newToons]);
-    toast.success(`Added 3x ${toonToDupe.toonName}!`);
-  };
-
   // Copy full team to clipboard
   const copyTeamToClipboard = () => {
     const teamText = team
@@ -108,7 +105,10 @@ export default function Home() {
           .filter(Boolean)
           .join(", ");
 
-        return trinketNames ? `${toon.toonName} (${trinketNames})` : toon.toonName;
+        const countText = toon.count > 1 ? ` (${toon.count}x)` : "";
+        return trinketNames
+          ? `${toon.toonName}${countText} (${trinketNames})`
+          : `${toon.toonName}${countText}`;
       })
       .join("\n");
 
@@ -154,7 +154,7 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-[#00FFFF] text-lg font-semibold">Pick Your Dream Dandy's World Squad!</p>
-          <p className="text-gray-400 text-sm mt-2">Click Toon to add • Click Edit Trinkets to add items • Copy to paste in game</p>
+          <p className="text-gray-400 text-sm mt-2">Click Toon to add • Adjust count (1-8x) • Edit Trinkets • Copy to paste in game</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -210,7 +210,9 @@ export default function Home() {
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <h3 className="text-lg font-bold text-[#FF1493]">{toon.toonName}</h3>
+                            <h3 className="text-lg font-bold text-[#FF1493]">
+                              {toon.toonName} {toon.count > 1 && <span className="text-[#00FF00]">({toon.count}x)</span>}
+                            </h3>
                             {trinketNames.length > 0 && (
                               <p className="text-xs text-gray-400 mt-1">
                                 {trinketNames.length}/2 trinkets
@@ -235,6 +237,30 @@ export default function Home() {
                           </div>
                         )}
 
+                        {/* Count Multiplier */}
+                        <div className="mb-3 p-2 rounded-lg bg-[#00FF00]/10 border border-[#00FF00]/30">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-[#00FF00] font-semibold">Count:</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => updateToonCount(index, toon.count - 1)}
+                                disabled={toon.count <= 1}
+                                className="p-1 rounded bg-[#FF1493]/20 hover:bg-[#FF1493]/40 text-[#FF1493] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                <Minus size={14} />
+                              </button>
+                              <span className="text-sm font-bold text-[#00FF00] w-6 text-center">{toon.count}x</span>
+                              <button
+                                onClick={() => updateToonCount(index, toon.count + 1)}
+                                disabled={toon.count >= 8}
+                                className="p-1 rounded bg-[#00FFFF]/20 hover:bg-[#00FFFF]/40 text-[#00FFFF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="flex gap-2">
                           <button
                             onClick={() => openTrinketEditor(index)}
@@ -243,17 +269,11 @@ export default function Home() {
                             Edit Trinkets
                           </button>
                           <button
-                            onClick={() => dupeToon(index)}
-                            className="px-3 py-2 rounded-lg bg-[#00FF00]/20 hover:bg-[#00FF00]/40 text-[#00FF00] transition-colors font-semibold text-xs"
-                            title="Add 3x this Toon with same trinkets"
-                          >
-                            3x
-                          </button>
-                          <button
                             onClick={() => {
+                              const countText = toon.count > 1 ? ` (${toon.count}x)` : "";
                               const text = trinketNames.length > 0 
-                                ? `${toon.toonName} (${trinketNames.join(", ")})`
-                                : toon.toonName;
+                                ? `${toon.toonName}${countText} (${trinketNames.join(", ")})`
+                                : `${toon.toonName}${countText}`;
                               navigator.clipboard.writeText(text);
                               toast.success(`Copied ${toon.toonName}!`);
                             }}

@@ -49,6 +49,15 @@ export const TOONS: Toon[] = [
   { id: "tisha", name: "Tisha", category: "regular" },
   { id: "toodles", name: "Toodles", category: "regular" },
   { id: "vee", name: "Vee", category: "regular" },
+
+  // Main/Lethal Toons
+  { id: "dandy", name: "Dandy", category: "lethal" },
+  { id: "dyle", name: "Dyle", category: "lethal" },
+
+  // Additional Toons
+  { id: "rodger", name: "Rodger", category: "regular" },
+  { id: "scraps", name: "Scraps", category: "regular" },
+  { id: "yatta", name: "Yatta", category: "regular" },
 ];
 
 export const TRINKETS: Trinket[] = [

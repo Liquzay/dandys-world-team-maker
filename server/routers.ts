@@ -1,10 +1,11 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
 import { TOONS, TRINKETS } from "../client/src/data/characters";
+import { getUserProfile, upsertUserProfile, getUserRuns, createRun, updateRun, deleteRun, getCommunityLayouts, createCommunityLayout, likeCommunityLayout } from "./db";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -111,6 +112,84 @@ Ensure all Toon and Trinket names match exactly from the lists above.`;
           team: validatedTeam,
           description: input.description,
         };
+      }),
+  }),
+
+  // User profile management
+  profile: router({
+    getProfile: protectedProcedure.query(async ({ ctx }) => {
+      return await getUserProfile(ctx.user.id);
+    }),
+    updateProfile: protectedProcedure
+      .input(z.object({
+        robloxUsername: z.string().min(1, "Roblox username required"),
+        privateServerLink: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await upsertUserProfile(ctx.user.id, {
+          robloxUsername: input.robloxUsername,
+          privateServerLink: input.privateServerLink,
+        });
+        return { success: true };
+      }),
+  }),
+
+  // Runs management
+  runs: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await getUserRuns(ctx.user.id);
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1, "Run name required"),
+        description: z.string().min(1, "Run description required"),
+        teamData: z.string(),
+        isPublic: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const result = await createRun({
+          userId: ctx.user.id,
+          name: input.name,
+          description: input.description,
+          teamData: input.teamData,
+          isPublic: input.isPublic ? 1 : 0,
+        });
+        return result;
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        runId: z.number(),
+        isPublic: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await updateRun(input.runId, {
+          isPublic: input.isPublic ? 1 : 0,
+        });
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ runId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteRun(input.runId);
+        return { success: true };
+      }),
+  }),
+
+  // Community layouts
+  community: router({
+    list: publicProcedure
+      .input(z.object({
+        limit: z.number().default(20),
+        offset: z.number().default(0),
+      }))
+      .query(async ({ input }) => {
+        return await getCommunityLayouts(input.limit, input.offset);
+      }),
+    like: publicProcedure
+      .input(z.object({ layoutId: z.number() }))
+      .mutation(async ({ input }) => {
+        await likeCommunityLayout(input.layoutId);
+        return { success: true };
       }),
   }),
 });

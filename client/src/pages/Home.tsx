@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { TOONS, TRINKETS } from "@/data/characters";
 import { Button } from "@/components/ui/button";
-import { X, Copy, Trash2, Plus, Minus, Folder, Save, Wand2, Loader } from "lucide-react";
+import { X, Copy, Trash2, Plus, Minus, Folder, Save, Wand2, Loader, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import AccountPage from "./Account";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 interface ToonWithTrinkets {
   toonId: string;
@@ -30,6 +32,9 @@ export default function Home() {
   const [randomDescription, setRandomDescription] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const generateTeamMutation = trpc.team.generateRandomTeam.useMutation();
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   // Load saved layouts from localStorage on mount
   useEffect(() => {
@@ -266,6 +271,50 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Hamburger Menu */}
+        <div className="flex justify-between items-center mb-6 relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="p-2 rounded-lg bg-[#FF1493]/20 hover:bg-[#FF1493]/40 text-[#FF1493] transition-colors"
+          >
+            <Menu size={24} />
+          </button>
+          {showMenu && (
+            <div className="absolute top-12 left-0 bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#FF1493] rounded-lg shadow-2xl shadow-[#FF1493]/50 z-40 min-w-[220px]">
+              <button
+                onClick={() => {
+                  setShowAccountModal(true);
+                  setShowMenu(false);
+                }}
+                className="w-full px-4 py-3 text-left text-[#00FFFF] hover:bg-[#2D0A4E] transition-colors border-b border-[#2D0A4E] font-semibold"
+              >
+                👤 Account Settings
+              </button>
+              <button
+                onClick={() => {
+                  setShowLoadModal(true);
+                  setShowMenu(false);
+                }}
+                className="w-full px-4 py-3 text-left text-[#00FFFF] hover:bg-[#2D0A4E] transition-colors border-b border-[#2D0A4E] font-semibold"
+              >
+                📂 My Layouts
+              </button>
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  toast.info("Community layouts coming soon!");
+                }}
+                className="w-full px-4 py-3 text-left text-[#00FFFF] hover:bg-[#2D0A4E] transition-colors font-semibold"
+              >
+                🌍 Community
+              </button>
+            </div>
+          )}
+          <div className="text-sm text-[#00FF00] font-semibold">
+            {isAuthenticated ? `Welcome, ${user?.name}!` : "Not logged in"}
+          </div>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -776,6 +825,11 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Account Modal */}
+      {showAccountModal && (
+        <AccountPage onClose={() => setShowAccountModal(false)} />
       )}
     </div>
   );

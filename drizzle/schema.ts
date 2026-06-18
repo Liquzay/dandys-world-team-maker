@@ -25,4 +25,46 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+// User profiles with Roblox info
+export const userProfiles = mysqlTable("userProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  robloxUsername: varchar("robloxUsername", { length: 255 }).notNull(),
+  privateServerLink: text("privateServerLink"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = typeof userProfiles.$inferInsert;
+
+// Runs (team compositions with metadata)
+export const runs = mysqlTable("runs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  teamData: text("teamData").notNull(), // JSON string of team composition
+  isPublic: int("isPublic").default(0).notNull(), // 0 = private, 1 = public
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Run = typeof runs.$inferSelect;
+export type InsertRun = typeof runs.$inferInsert;
+
+// Community layouts (shared runs)
+export const communityLayouts = mysqlTable("communityLayouts", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: int("runId").notNull(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  teamData: text("teamData").notNull(), // JSON string of team composition
+  likes: int("likes").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CommunityLayout = typeof communityLayouts.$inferSelect;
+export type InsertCommunityLayout = typeof communityLayouts.$inferInsert;

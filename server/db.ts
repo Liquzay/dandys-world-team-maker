@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, userProfiles, InsertUserProfile, runs, InsertRun, communityLayouts, InsertCommunityLayout } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -90,3 +90,68 @@ export async function getUserByOpenId(openId: string) {
 }
 
 // TODO: add feature queries here as your schema grows.
+
+// User Profile functions
+export async function getUserProfile(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function upsertUserProfile(userId: number, profile: Omit<InsertUserProfile, 'userId'>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(userProfiles).values({ ...profile, userId }).onDuplicateKeyUpdate({
+    set: profile,
+  });
+}
+
+// Runs functions
+export async function getUserRuns(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(runs).where(eq(runs.userId, userId)).orderBy(desc(runs.createdAt));
+}
+
+export async function createRun(run: InsertRun) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.insert(runs).values(run);
+  return result;
+}
+
+export async function updateRun(runId: number, updates: Partial<Omit<InsertRun, 'userId'>>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(runs).set(updates).where(eq(runs.id, runId));
+}
+
+export async function deleteRun(runId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(runs).where(eq(runs.id, runId));
+}
+
+// Community Layouts functions
+export async function getCommunityLayouts(limit: number = 20, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(communityLayouts).orderBy(desc(communityLayouts.likes)).limit(limit).offset(offset);
+}
+
+export async function createCommunityLayout(layout: InsertCommunityLayout) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.insert(communityLayouts).values(layout);
+  return result;
+}
+
+export async function likeCommunityLayout(layoutId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const layout = await db.select().from(communityLayouts).where(eq(communityLayouts.id, layoutId)).limit(1);
+  if (layout.length > 0) {
+    await db.update(communityLayouts).set({ likes: layout[0].likes + 1 }).where(eq(communityLayouts.id, layoutId));
+  }
+}

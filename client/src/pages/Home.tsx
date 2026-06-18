@@ -17,9 +17,12 @@ export default function Home() {
   const [selectedTrinkets, setSelectedTrinkets] = useState<string[]>([]);
   const [trinketSearch, setTrinketSearch] = useState("");
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const longPressTriggered = useRef(false);
 
-  const handleToonMouseDown = (toonId: string, toonName: string) => {
+  const handleToonPointerDown = (toonId: string, toonName: string) => {
+    longPressTriggered.current = false;
     longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
       setHoldingToon(toonId);
       setShowTrinketModal(true);
       setSelectedTrinkets([]);
@@ -27,15 +30,22 @@ export default function Home() {
     }, 500);
   };
 
-  const handleToonMouseUp = () => {
+  const handleToonPointerUp = (e: React.PointerEvent) => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
   };
 
-  const handleToonClick = (toonId: string, toonName: string) => {
-    handleToonMouseUp();
+  const handleToonClick = (e: React.MouseEvent, toonId: string, toonName: string) => {
+    // If long-press was triggered, don't add toon on click
+    if (longPressTriggered.current) {
+      longPressTriggered.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     // Add toon to team with no trinkets
     const newToon: ToonWithTrinkets = {
       toonId,
@@ -113,6 +123,12 @@ export default function Home() {
     trinket.name.toLowerCase().includes(trinketSearch.toLowerCase())
   );
 
+  const closeModal = () => {
+    setShowTrinketModal(false);
+    setHoldingToon(null);
+    setSelectedTrinkets([]);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#2D0A4E] via-[#1a0033] to-[#0f001a]">
       {/* Hero Section */}
@@ -154,11 +170,11 @@ export default function Home() {
                 {TOONS.map((toon) => (
                   <button
                     key={toon.id}
-                    onMouseDown={() => handleToonMouseDown(toon.id, toon.name)}
-                    onMouseUp={handleToonMouseUp}
-                    onMouseLeave={handleToonMouseUp}
-                    onClick={() => handleToonClick(toon.id, toon.name)}
-                    className="relative group p-3 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] hover:border-[#FF1493] transition-all duration-200 hover:shadow-lg hover:shadow-[#FF1493]/50 transform hover:scale-105 active:scale-95"
+                    onPointerDown={() => handleToonPointerDown(toon.id, toon.name)}
+                    onPointerUp={handleToonPointerUp}
+                    onPointerCancel={handleToonPointerUp}
+                    onClick={(e) => handleToonClick(e, toon.id, toon.name)}
+                    className="relative group p-3 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] hover:border-[#FF1493] transition-all duration-200 hover:shadow-lg hover:shadow-[#FF1493]/50 transform hover:scale-105 active:scale-95 touch-manipulation"
                   >
                     <div className="text-center">
                       <div className="text-2xl mb-1">🎪</div>
@@ -227,10 +243,10 @@ export default function Home() {
 
                         <div className="flex gap-2">
                           <button
-                            onMouseDown={() => handleToonMouseDown(toon.toonId, toon.toonName)}
-                            onMouseUp={handleToonMouseUp}
-                            onMouseLeave={handleToonMouseUp}
-                            className="flex-1 px-3 py-2 rounded-lg bg-[#00FFFF]/20 hover:bg-[#00FFFF]/40 text-[#00FFFF] text-xs font-semibold transition-colors"
+                            onPointerDown={() => handleToonPointerDown(toon.toonId, toon.toonName)}
+                            onPointerUp={handleToonPointerUp}
+                            onPointerCancel={handleToonPointerUp}
+                            className="flex-1 px-3 py-2 rounded-lg bg-[#00FFFF]/20 hover:bg-[#00FFFF]/40 text-[#00FFFF] text-xs font-semibold transition-colors touch-manipulation"
                           >
                             Edit Trinkets
                           </button>
@@ -275,15 +291,21 @@ export default function Home() {
 
       {/* Trinket Selection Modal */}
       {showTrinketModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] rounded-lg shadow-2xl shadow-[#00FFFF]/50 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={closeModal}
+        >
+          <div 
+            className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] rounded-lg shadow-2xl shadow-[#00FFFF]/50 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div className="p-6 border-b border-[#2D0A4E] flex items-center justify-between">
               <h2 className="text-2xl font-bold text-[#FF1493]">
                 Select Trinkets for {TOONS.find((t) => t.id === holdingToon)?.name}
               </h2>
               <button
-                onClick={() => setShowTrinketModal(false)}
+                onClick={closeModal}
                 className="p-2 hover:bg-[#2D0A4E] rounded-lg transition-colors"
               >
                 <X size={24} className="text-[#FF1493]" />
@@ -330,7 +352,7 @@ export default function Home() {
             {/* Footer */}
             <div className="p-6 border-t border-[#2D0A4E] flex gap-3">
               <Button
-                onClick={() => setShowTrinketModal(false)}
+                onClick={closeModal}
                 className="flex-1 bg-[#2D0A4E] hover:bg-[#3D1A5E] text-white font-bold px-6 py-2 rounded-lg transition-all"
               >
                 Cancel

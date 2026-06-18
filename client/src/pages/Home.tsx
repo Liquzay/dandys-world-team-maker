@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { TOONS, TRINKETS } from "@/data/characters";
 import { Button } from "@/components/ui/button";
-import { X, Copy, Trash2, Plus, Minus, Folder, Save } from "lucide-react";
+import { X, Copy, Trash2, Plus, Minus, Folder, Save, Wand2, Loader } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 interface ToonWithTrinkets {
   toonId: string;
@@ -25,6 +26,10 @@ export default function Home() {
   const [saveName, setSaveName] = useState("");
   const [renamingToonIndex, setRenamingToonIndex] = useState<number | null>(null);
   const [renameToonValue, setRenameToonValue] = useState("");
+  const [showRandomModal, setShowRandomModal] = useState(false);
+  const [randomDescription, setRandomDescription] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const generateTeamMutation = trpc.team.generateRandomTeam.useMutation();
 
   // Load saved layouts from localStorage on mount
   useEffect(() => {
@@ -154,6 +159,38 @@ export default function Home() {
   const clearTeam = () => {
     setTeam([]);
     toast.success("Team cleared");
+  };
+
+  // Generate random team with AI
+  const generateRandomTeam = async () => {
+    if (!randomDescription.trim()) {
+      toast.error("Please describe the team you want!");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const result = await generateTeamMutation.mutateAsync({
+        description: randomDescription,
+      });
+
+      const newTeam = result.team.map((item: any) => ({
+        toonId: item.toonId,
+        toonName: item.toonName,
+        trinkets: item.trinkets,
+        count: item.count,
+      }));
+
+      setTeam(newTeam);
+      setShowRandomModal(false);
+      setRandomDescription("");
+      toast.success(`Generated team: ${result.description}!`);
+    } catch (error) {
+      toast.error("Failed to generate team. Try again!");
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // Save current team as a layout
@@ -432,6 +469,12 @@ export default function Home() {
                     <Copy size={18} /> Copy Full Team
                   </Button>
                   <Button
+                    onClick={() => setShowRandomModal(true)}
+                    className="bg-gradient-to-r from-[#9D4EDD] to-[#7209B7] hover:from-[#7209B7] hover:to-[#9D4EDD] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#9D4EDD]/50 transition-all hover:shadow-[#9D4EDD]/70 flex items-center justify-center gap-2"
+                  >
+                    <Wand2 size={18} /> Random
+                  </Button>
+                  <Button
                     onClick={clearTeam}
                     className="bg-gradient-to-r from-[#FF1493] to-[#FF69B4] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70 flex items-center justify-center gap-2"
                   >
@@ -620,6 +663,61 @@ export default function Home() {
                 className="flex-1 bg-gradient-to-r from-[#00FFFF] to-[#00FF00] hover:from-[#00FF00] hover:to-[#00FFFF] text-[#0f001a] font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#00FFFF]/50 transition-all hover:shadow-[#00FFFF]/70 cursor-pointer"
               >
                 Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Random Team Generator Modal */}
+      {showRandomModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowRandomModal(false)}
+        >
+          <div 
+            className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#9D4EDD] rounded-lg shadow-2xl shadow-[#9D4EDD]/50 max-w-md w-full overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-[#2D0A4E] flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-[#9D4EDD]">AI Team Generator</h2>
+              <button
+                onClick={() => setShowRandomModal(false)}
+                className="p-2 hover:bg-[#2D0A4E] rounded-lg transition-colors"
+              >
+                <X size={24} className="text-[#9D4EDD]" />
+              </button>
+            </div>
+            <div className="p-6 flex-1">
+              <p className="text-sm text-gray-400 mb-4">Describe the team you want and AI will generate it for you!</p>
+              <textarea
+                value={randomDescription}
+                onChange={(e) => setRandomDescription(e.target.value)}
+                placeholder="e.g., A fast and aggressive team with lots of speed trinkets"
+                className="w-full px-4 py-3 rounded-lg bg-[#0f001a] border border-[#2D0A4E] text-white placeholder-gray-500 focus:border-[#9D4EDD] focus:outline-none resize-none h-24"
+              />
+            </div>
+            <div className="p-6 border-t border-[#2D0A4E] flex gap-3">
+              <Button
+                onClick={() => setShowRandomModal(false)}
+                className="flex-1 bg-[#2D0A4E] hover:bg-[#3D1A5E] text-white font-bold px-6 py-2 rounded-lg transition-all cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={generateRandomTeam}
+                disabled={isGenerating}
+                className="flex-1 bg-gradient-to-r from-[#9D4EDD] to-[#7209B7] hover:from-[#7209B7] hover:to-[#9D4EDD] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#9D4EDD]/50 transition-all hover:shadow-[#9D4EDD]/70 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader size={16} className="animate-spin" /> Generating...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 size={16} /> Generate
+                  </>
+                )}
               </Button>
             </div>
           </div>

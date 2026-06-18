@@ -16,6 +16,8 @@ export default function Home() {
   const [editingToonIndex, setEditingToonIndex] = useState<number | null>(null);
   const [tempTrinkets, setTempTrinkets] = useState<string[]>([]);
   const [trinketSearch, setTrinketSearch] = useState("");
+  const [atStartText, setAtStartText] = useState("");
+  const [showAtStartModal, setShowAtStartModal] = useState(false);
 
   // Add a new toon to the team
   const addToon = (toonId: string, toonName: string) => {
@@ -98,7 +100,14 @@ export default function Home() {
 
   // Copy full team to clipboard
   const copyTeamToClipboard = () => {
-    const teamText = team
+    let teamText = "";
+    
+    // Add "At Start" text if provided
+    if (atStartText.trim()) {
+      teamText = atStartText.trim() + "\n";
+    }
+    
+    teamText += team
       .map((toon) => {
         const trinketNames = toon.trinkets
           .map((id) => TRINKETS.find((t) => t.id === id)?.name)
@@ -290,6 +299,12 @@ export default function Home() {
                 {/* Action Buttons */}
                 <div className="flex gap-3 mt-6">
                   <Button
+                    onClick={() => setShowAtStartModal(true)}
+                    className="bg-gradient-to-r from-[#FF69B4] to-[#FF1493] hover:from-[#FF1493] hover:to-[#FF69B4] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70 flex items-center justify-center gap-2"
+                  >
+                    At Start
+                  </Button>
+                  <Button
                     onClick={copyTeamToClipboard}
                     className="flex-1 bg-gradient-to-r from-[#00FF00] to-[#00FFFF] hover:from-[#00FF00] hover:to-[#00FFFF] text-[#0f001a] font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#00FF00]/50 transition-all hover:shadow-[#00FF00]/70 flex items-center justify-center gap-2"
                   >
@@ -381,6 +396,62 @@ export default function Home() {
                 className="flex-1 bg-gradient-to-r from-[#FF1493] to-[#FF69B4] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70 cursor-pointer"
               >
                 Save ({tempTrinkets.length}/2)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* At Start Modal */}
+      {showAtStartModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowAtStartModal(false)}
+        >
+          <div 
+            className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#FF1493] rounded-lg shadow-2xl shadow-[#FF1493]/50 max-w-md w-full overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-6 border-b border-[#2D0A4E] flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-[#FF1493]">
+                Add Text at Start
+              </h2>
+              <button
+                onClick={() => setShowAtStartModal(false)}
+                className="p-2 hover:bg-[#2D0A4E] rounded-lg transition-colors"
+              >
+                <X size={24} className="text-[#FF1493]" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 flex-1">
+              <p className="text-sm text-gray-400 mb-4">Enter text that will appear at the start of your copied team. Leave blank to add nothing.</p>
+              <textarea
+                value={atStartText}
+                onChange={(e) => setAtStartText(e.target.value)}
+                placeholder="e.g., My awesome team:"
+                className="w-full px-4 py-3 rounded-lg bg-[#0f001a] border border-[#2D0A4E] text-white placeholder-gray-500 focus:border-[#FF1493] focus:outline-none resize-none h-24"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-[#2D0A4E] flex gap-3">
+              <Button
+                onClick={() => setShowAtStartModal(false)}
+                className="flex-1 bg-[#2D0A4E] hover:bg-[#3D1A5E] text-white font-bold px-6 py-2 rounded-lg transition-all cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowAtStartModal(false);
+                  toast.success("At Start text updated!");
+                }}
+                className="flex-1 bg-gradient-to-r from-[#FF1493] to-[#FF69B4] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70 cursor-pointer"
+              >
+                Save
               </Button>
             </div>
           </div>

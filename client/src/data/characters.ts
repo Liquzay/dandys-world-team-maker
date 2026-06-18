@@ -7,7 +7,7 @@ export interface Toon {
 export interface Trinket {
   id: string;
   name: string;
-  category: "shop" | "common" | "uncommon" | "rare" | "main";
+  category: "shop" | "common" | "uncommon" | "rare" | "main" | "lethal";
   rarity?: string;
 }
 
@@ -103,6 +103,10 @@ export const TRINKETS: Trinket[] = [
   { id: "savory-charm", name: "Savory Charm", category: "main", rarity: "Main Character" },
   { id: "star-pillow", name: "Star Pillow", category: "main", rarity: "Main Character" },
   { id: "vees-remote", name: "Vee's Remote", category: "main", rarity: "Main Character" },
+
+  // Lethal Trinkets
+  { id: "train-whistle", name: "Train Whistle", category: "lethal", rarity: "Lethal" },
+  { id: "dandy-plush", name: "Dandy Plush", category: "lethal", rarity: "Lethal" },
 ];
 
 export const TRINKET_CATEGORIES = {
@@ -111,6 +115,7 @@ export const TRINKET_CATEGORIES = {
   uncommon: "Uncommon Twisted",
   rare: "Rare Twisted",
   main: "Main Character Twisted",
+  lethal: "Lethal",
 };
 
 export const TOON_CATEGORIES = {

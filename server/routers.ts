@@ -30,17 +30,22 @@ export const appRouter = router({
         const toonNames = TOONS.map(t => t.name);
         const trinketNames = TRINKETS.map(t => t.name);
 
-        const prompt = `You are a Dandy's World team builder assistant. Based on the user's description, generate a random team composition.
+        const mainCharacters = ["Astro", "Pebble", "Shelly", "Sprout", "Vee", "Bassie", "Bobette", "Gourdy"];
+        
+        const prompt = `You are an expert Dandy's World team builder. You have knowledge of real player strategies from the Dandy's World community.
 
-Available Toons: ${toonNames.join(", ")}
-Available Trinkets: ${trinketNames.join(", ")}
+MAIN CHARACTERS (prioritize these): ${mainCharacters.join(", ")}
+All Available Toons: ${toonNames.join(", ")}
+All Available Trinkets: ${trinketNames.join(", ")}
 
 User's request: "${input.description}"
 
-Generate a team with:
-1. 3-5 different Toons (each Toon can appear 1-8 times)
-2. Each Toon should have 0-2 trinkets
-3. Make the team thematic and fun based on the user's description
+Based on your knowledge of Dandy's World community strategies and meta teams:
+1. Generate a team with 3-5 different Toons (each can appear 1-8 times)
+2. Prioritize main characters when appropriate
+3. Each Toon should have 0-2 trinkets
+4. Use real team strategies and synergies from the Dandy's World community
+5. Make the team match the user's description while being strategically sound
 
 Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
 {

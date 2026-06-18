@@ -7,6 +7,7 @@ import { toast } from "sonner";
 interface ToonWithTrinkets {
   toonId: string;
   toonName: string;
+  customName?: string; // custom name for the toon
   trinkets: string[]; // trinket IDs
   count: number; // 1-8x multiplier
 }
@@ -22,6 +23,8 @@ export default function Home() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [saveName, setSaveName] = useState("");
+  const [renamingToonIndex, setRenamingToonIndex] = useState<number | null>(null);
+  const [renameToonValue, setRenameToonValue] = useState("");
 
   // Load saved layouts from localStorage on mount
   useEffect(() => {
@@ -130,6 +133,7 @@ export default function Home() {
     
     teamText += team
       .map((toon) => {
+        const displayName = toon.customName || toon.toonName;
         const trinketNames = toon.trinkets
           .map((id) => TRINKETS.find((t) => t.id === id)?.name)
           .filter(Boolean)
@@ -137,8 +141,8 @@ export default function Home() {
 
         const countText = toon.count > 1 ? ` (${toon.count}x)` : "";
         return trinketNames
-          ? `${toon.toonName}${countText} (${trinketNames})`
-          : `${toon.toonName}${countText}`;
+          ? `${displayName}${countText} (${trinketNames})`
+          : `${displayName}${countText}`;
       })
       .join("\n");
 
@@ -182,6 +186,28 @@ export default function Home() {
   const deleteLayout = (id: string) => {
     setSavedLayouts(savedLayouts.filter((layout) => layout.id !== id));
     toast.success("Layout deleted");
+  };
+
+  // Rename a toon
+  const renameToon = (index: number) => {
+    if (!renameToonValue.trim()) {
+      toast.error("Please enter a name");
+      return;
+    }
+    setTeam((prev) =>
+      prev.map((toon, i) =>
+        i === index ? { ...toon, customName: renameToonValue } : toon
+      )
+    );
+    setRenamingToonIndex(null);
+    setRenameToonValue("");
+    toast.success("Toon renamed!");
+  };
+
+  // Start renaming a toon
+  const startRenaming = (index: number) => {
+    setRenamingToonIndex(index);
+    setRenameToonValue(team[index].customName || "");
   };
 
   // Filter trinkets based on search
@@ -271,10 +297,39 @@ export default function Home() {
                         className="p-4 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] shadow-lg shadow-[#00FFFF]/30"
                       >
                         <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h3 className="text-lg font-bold text-[#FF1493]">
-                              {toon.toonName} {toon.count > 1 && <span className="text-[#00FF00]">({toon.count}x)</span>}
-                            </h3>
+                          <div className="flex-1">
+                            {renamingToonIndex === index ? (
+                              <div className="flex gap-2 mb-2">
+                                <input
+                                  type="text"
+                                  value={renameToonValue}
+                                  onChange={(e) => setRenameToonValue(e.target.value)}
+                                  className="flex-1 px-2 py-1 rounded-lg bg-[#0f001a] border border-[#FF1493] text-white text-sm focus:outline-none"
+                                  autoFocus
+                                  onKeyPress={(e) => e.key === "Enter" && renameToon(index)}
+                                />
+                                <button
+                                  onClick={() => renameToon(index)}
+                                  className="px-2 py-1 rounded-lg bg-[#00FF00]/20 hover:bg-[#00FF00]/40 text-[#00FF00] text-xs font-semibold transition-colors"
+                                >
+                                  ✓
+                                </button>
+                                <button
+                                  onClick={() => setRenamingToonIndex(null)}
+                                  className="px-2 py-1 rounded-lg bg-[#FF1493]/20 hover:bg-[#FF1493]/40 text-[#FF1493] text-xs font-semibold transition-colors"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : (
+                              <h3 
+                                onClick={() => startRenaming(index)}
+                                className="text-lg font-bold text-[#FF1493] cursor-pointer hover:text-[#FF69B4] transition-colors"
+                                title="Click to rename"
+                              >
+                                {toon.customName || toon.toonName} {toon.count > 1 && <span className="text-[#00FF00]">({toon.count}x)</span>}
+                              </h3>
+                            )}
                             {trinketNames.length > 0 && (
                               <p className="text-xs text-gray-400 mt-1">
                                 {trinketNames.length}/2 trinkets
@@ -332,12 +387,13 @@ export default function Home() {
                           </button>
                           <button
                             onClick={() => {
+                              const displayName = toon.customName || toon.toonName;
                               const countText = toon.count > 1 ? ` (${toon.count}x)` : "";
                               const text = trinketNames.length > 0 
-                                ? `${toon.toonName}${countText} (${trinketNames.join(", ")})`
-                                : `${toon.toonName}${countText}`;
+                                ? `${displayName}${countText} (${trinketNames.join(", ")})`
+                                : `${displayName}${countText}`;
                               navigator.clipboard.writeText(text);
-                              toast.success(`Copied ${toon.toonName}!`);
+                              toast.success(`Copied ${displayName}!`);
                             }}
                             className="px-3 py-2 rounded-lg bg-[#FF1493]/20 hover:bg-[#FF1493]/40 text-[#FF1493] transition-colors"
                           >

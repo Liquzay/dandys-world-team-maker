@@ -107,6 +107,14 @@ export const TRINKETS: Trinket[] = [
   // Lethal Trinkets
   { id: "train-whistle", name: "Train Whistle", category: "lethal", rarity: "Lethal" },
   { id: "dandy-plush", name: "Dandy Plush", category: "lethal", rarity: "Lethal" },
+  { id: "brusha-trinket", name: "Brusha's Trinket", category: "lethal", rarity: "Lethal" },
+  { id: "dyle-trinket", name: "Dyle's Trinket", category: "lethal", rarity: "Lethal" },
+  { id: "scrapbook", name: "Scrapbook", category: "lethal", rarity: "Lethal" },
+  { id: "toy-kit", name: "Toy Kit", category: "lethal", rarity: "Lethal" },
+  { id: "whispering-flower", name: "Whispering Flower", category: "lethal", rarity: "Lethal" },
+  { id: "festive-lights", name: "Festive Lights", category: "lethal", rarity: "Lethal" },
+  { id: "peppermint-icing", name: "Peppermint Icing", category: "lethal", rarity: "Lethal" },
+  { id: "coal", name: "Coal", category: "lethal", rarity: "Lethal" },
 ];
 
 export const TRINKET_CATEGORIES = {

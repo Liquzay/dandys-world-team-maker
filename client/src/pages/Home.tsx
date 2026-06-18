@@ -1,88 +1,116 @@
 import { useState, useRef, useEffect } from "react";
 import { TOONS, TRINKETS, TRINKET_CATEGORIES } from "@/data/characters";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Copy, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
-interface SelectedItem {
-  id: string;
-  name: string;
-  type: "toon" | "trinket";
-  count: number;
+interface ToonWithTrinkets {
+  toonId: string;
+  toonName: string;
+  trinkets: string[]; // trinket IDs
 }
 
 export default function Home() {
-  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
-  const [lastTapTime, setLastTapTime] = useState<{ [key: string]: number }>({});
-  const longPressTimer = useRef<{ [key: string]: NodeJS.Timeout }>({});
+  const [team, setTeam] = useState<ToonWithTrinkets[]>([]);
+  const [holdingToon, setHoldingToon] = useState<string | null>(null);
+  const [showTrinketModal, setShowTrinketModal] = useState(false);
+  const [selectedTrinkets, setSelectedTrinkets] = useState<string[]>([]);
+  const [trinketSearch, setTrinketSearch] = useState("");
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const addItem = (id: string, name: string, type: "toon" | "trinket", count: number = 1) => {
-    setSelectedItems((prev) => {
-      const existing = prev.find((item) => item.id === id && item.type === type);
-      if (existing) {
-        return prev.map((item) =>
-          item.id === id && item.type === type ? { ...item, count: item.count + count } : item
-        );
-      }
-      return [...prev, { id, name, type, count }];
-    });
-  };
-
-  const removeItem = (id: string, type: "toon" | "trinket") => {
-    setSelectedItems((prev) => prev.filter((item) => !(item.id === id && item.type === type)));
-  };
-
-  const decrementItem = (id: string, type: "toon" | "trinket") => {
-    setSelectedItems((prev) =>
-      prev
-        .map((item) =>
-          item.id === id && item.type === type ? { ...item, count: item.count - 1 } : item
-        )
-        .filter((item) => item.count > 0)
-    );
-  };
-
-  const handleMouseDown = (id: string, name: string, type: "toon" | "trinket") => {
-    longPressTimer.current[id] = setTimeout(() => {
-      if (type === "trinket") {
-        addItem(id, name, type, 2);
-      }
+  const handleToonMouseDown = (toonId: string, toonName: string) => {
+    longPressTimer.current = setTimeout(() => {
+      setHoldingToon(toonId);
+      setShowTrinketModal(true);
+      setSelectedTrinkets([]);
+      setTrinketSearch("");
     }, 500);
   };
 
-  const handleMouseUp = (id: string) => {
-    if (longPressTimer.current[id]) {
-      clearTimeout(longPressTimer.current[id]);
-      delete longPressTimer.current[id];
+  const handleToonMouseUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
   };
 
-  const handleTap = (id: string, name: string, type: "toon" | "trinket") => {
-    const now = Date.now();
-    const lastTap = lastTapTime[id] || 0;
-
-    if (now - lastTap < 300) {
-      // Double tap detected
-      addItem(id, name, type, 1);
-      setLastTapTime((prev) => ({ ...prev, [id]: 0 }));
-    } else {
-      // Single tap
-      addItem(id, name, type, 1);
-      setLastTapTime((prev) => ({ ...prev, [id]: now }));
-    }
+  const handleToonClick = (toonId: string, toonName: string) => {
+    handleToonMouseUp();
+    // Add toon to team with no trinkets
+    const newToon: ToonWithTrinkets = {
+      toonId,
+      toonName,
+      trinkets: [],
+    };
+    setTeam([...team, newToon]);
+    toast.success(`Added ${toonName} to team!`);
   };
 
-  const toonCount = selectedItems.filter((item) => item.type === "toon").reduce((sum, item) => sum + item.count, 0);
-  const trinketCount = selectedItems.filter((item) => item.type === "trinket").reduce((sum, item) => sum + item.count, 0);
+  const addTrinketToToon = (trinketId: string) => {
+    if (!holdingToon) return;
 
-  const groupedTrinkets = TRINKETS.reduce(
-    (acc, trinket) => {
-      if (!acc[trinket.category]) {
-        acc[trinket.category] = [];
+    setSelectedTrinkets((prev) => {
+      if (prev.includes(trinketId)) {
+        return prev.filter((id) => id !== trinketId);
       }
-      acc[trinket.category].push(trinket);
-      return acc;
-    },
-    {} as { [key: string]: typeof TRINKETS }
+      return [...prev, trinketId];
+    });
+  };
+
+  const confirmTrinkets = () => {
+    if (!holdingToon) return;
+
+    setTeam((prev) =>
+      prev.map((toon) =>
+        toon.toonId === holdingToon
+          ? { ...toon, trinkets: selectedTrinkets }
+          : toon
+      )
+    );
+
+    const trinketNames = selectedTrinkets
+      .map((id) => TRINKETS.find((t) => t.id === id)?.name)
+      .filter(Boolean)
+      .join(", ");
+
+    toast.success(
+      `Added ${selectedTrinkets.length} trinket(s) to ${TOONS.find((t) => t.id === holdingToon)?.name}!`
+    );
+
+    setShowTrinketModal(false);
+    setHoldingToon(null);
+    setSelectedTrinkets([]);
+  };
+
+  const removeToon = (index: number) => {
+    const toonName = team[index].toonName;
+    setTeam((prev) => prev.filter((_, i) => i !== index));
+    toast.success(`Removed ${toonName} from team`);
+  };
+
+  const copyTeamToClipboard = () => {
+    const teamText = team
+      .map((toon) => {
+        const trinketNames = toon.trinkets
+          .map((id) => TRINKETS.find((t) => t.id === id)?.name)
+          .filter(Boolean)
+          .join(", ");
+
+        return trinketNames ? `${toon.toonName} (${trinketNames})` : toon.toonName;
+      })
+      .join("\n");
+
+    navigator.clipboard.writeText(teamText);
+    toast.success("Team copied to clipboard!");
+  };
+
+  const clearTeam = () => {
+    setTeam([]);
+    toast.success("Team cleared");
+  };
+
+  const filteredTrinkets = TRINKETS.filter((trinket) =>
+    trinket.name.toLowerCase().includes(trinketSearch.toLowerCase())
   );
 
   return (
@@ -112,24 +140,24 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-[#00FFFF] text-lg font-semibold">Pick Your Dream Dandy's World Squad!</p>
-          <p className="text-gray-400 text-sm mt-2">Single-tap to add • Double-tap for more • Long-press trinkets for 2x</p>
+          <p className="text-gray-400 text-sm mt-2">Click to add Toon • Hold to add Trinkets • Copy to paste in game</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Toons Section */}
           <div className="lg:col-span-1">
             <div className="sticky top-4">
               <h2 className="text-2xl font-bold text-[#00FFFF] mb-4 flex items-center gap-2">
                 <span className="text-2xl">🎭</span> Toons
               </h2>
-              <div className="grid grid-cols-2 gap-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#FF1493] scrollbar-track-[#2D0A4E]">
+              <div className="grid grid-cols-2 gap-3 max-h-[700px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#FF1493] scrollbar-track-[#2D0A4E]">
                 {TOONS.map((toon) => (
                   <button
                     key={toon.id}
-                    onMouseDown={() => handleMouseDown(toon.id, toon.name, "toon")}
-                    onMouseUp={() => handleMouseUp(toon.id)}
-                    onMouseLeave={() => handleMouseUp(toon.id)}
-                    onClick={() => handleTap(toon.id, toon.name, "toon")}
+                    onMouseDown={() => handleToonMouseDown(toon.id, toon.name)}
+                    onMouseUp={handleToonMouseUp}
+                    onMouseLeave={handleToonMouseUp}
+                    onClick={() => handleToonClick(toon.id, toon.name)}
                     className="relative group p-3 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] hover:border-[#FF1493] transition-all duration-200 hover:shadow-lg hover:shadow-[#FF1493]/50 transform hover:scale-105 active:scale-95"
                   >
                     <div className="text-center">
@@ -137,6 +165,7 @@ export default function Home() {
                       <p className="text-xs font-semibold text-[#00FFFF] group-hover:text-[#FF1493] transition-colors truncate">
                         {toon.name}
                       </p>
+                      <p className="text-xs text-gray-500 mt-1">Hold for trinkets</p>
                     </div>
                   </button>
                 ))}
@@ -144,117 +173,178 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Trinkets Section */}
-          <div className="lg:col-span-2">
-            <h2 className="text-2xl font-bold text-[#00FF00] mb-4 flex items-center gap-2">
-              <span className="text-2xl">✨</span> Trinkets
+          {/* Team Section */}
+          <div className="lg:col-span-3">
+            <h2 className="text-2xl font-bold text-[#FF1493] mb-4 flex items-center gap-2">
+              <span className="text-2xl">🎮</span> Your Team ({team.length})
             </h2>
-            <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#FF1493] scrollbar-track-[#2D0A4E]">
-              {Object.entries(groupedTrinkets).map(([category, trinkets]) => (
-                <div key={category}>
-                  <h3 className="text-sm font-bold text-[#FF1493] mb-3 uppercase tracking-wider">
-                    {TRINKET_CATEGORIES[category as keyof typeof TRINKET_CATEGORIES]}
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {trinkets.map((trinket) => (
-                      <button
-                        key={trinket.id}
-                        onMouseDown={() => handleMouseDown(trinket.id, trinket.name, "trinket")}
-                        onMouseUp={() => handleMouseUp(trinket.id)}
-                        onMouseLeave={() => handleMouseUp(trinket.id)}
-                        onClick={() => handleTap(trinket.id, trinket.name, "trinket")}
-                        className="relative group p-3 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FF00] hover:border-[#FF1493] transition-all duration-200 hover:shadow-lg hover:shadow-[#00FF00]/50 transform hover:scale-105 active:scale-95"
+
+            {team.length === 0 ? (
+              <div className="p-8 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#2D0A4E] text-center">
+                <p className="text-gray-400 text-lg">No Toons selected yet.</p>
+                <p className="text-gray-500 text-sm mt-2">Click a Toon to add it, or hold to add Trinkets!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Team Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {team.map((toon, index) => {
+                    const trinketNames = toon.trinkets
+                      .map((id) => TRINKETS.find((t) => t.id === id)?.name)
+                      .filter(Boolean);
+
+                    return (
+                      <div
+                        key={index}
+                        className="p-4 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] shadow-lg shadow-[#00FFFF]/30"
                       >
-                        <div className="text-center">
-                          <div className="text-2xl mb-1">💎</div>
-                          <p className="text-xs font-semibold text-[#00FF00] group-hover:text-[#FF1493] transition-colors truncate">
-                            {trinket.name}
-                          </p>
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="text-lg font-bold text-[#FF1493]">{toon.toonName}</h3>
+                            {trinketNames.length > 0 && (
+                              <p className="text-xs text-gray-400 mt-1">
+                                {trinketNames.length} trinket{trinketNames.length !== 1 ? "s" : ""}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => removeToon(index)}
+                            className="p-2 rounded-lg bg-[#FF1493]/20 hover:bg-[#FF1493]/40 text-[#FF1493] transition-colors"
+                          >
+                            <X size={16} />
+                          </button>
                         </div>
-                      </button>
-                    ))}
-                  </div>
+
+                        {trinketNames.length > 0 && (
+                          <div className="mb-3 space-y-1">
+                            {trinketNames.map((name, i) => (
+                              <div key={i} className="text-xs text-[#00FF00] bg-[#00FF00]/10 px-2 py-1 rounded">
+                                ✨ {name}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          <button
+                            onMouseDown={() => handleToonMouseDown(toon.toonId, toon.toonName)}
+                            onMouseUp={handleToonMouseUp}
+                            onMouseLeave={handleToonMouseUp}
+                            className="flex-1 px-3 py-2 rounded-lg bg-[#00FFFF]/20 hover:bg-[#00FFFF]/40 text-[#00FFFF] text-xs font-semibold transition-colors"
+                          >
+                            Edit Trinkets
+                          </button>
+                          <button
+                            onClick={() => {
+                              const text = trinketNames.length > 0 
+                                ? `${toon.toonName} (${trinketNames.join(", ")})`
+                                : toon.toonName;
+                              navigator.clipboard.writeText(text);
+                              toast.success(`Copied ${toon.toonName}!`);
+                            }}
+                            className="px-3 py-2 rounded-lg bg-[#FF1493]/20 hover:bg-[#FF1493]/40 text-[#FF1493] transition-colors"
+                          >
+                            <Copy size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    onClick={copyTeamToClipboard}
+                    className="flex-1 bg-gradient-to-r from-[#00FF00] to-[#00FFFF] hover:from-[#00FF00] hover:to-[#00FFFF] text-[#0f001a] font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#00FF00]/50 transition-all hover:shadow-[#00FF00]/70 flex items-center justify-center gap-2"
+                  >
+                    <Copy size={18} /> Copy Full Team
+                  </Button>
+                  <Button
+                    onClick={clearTeam}
+                    className="bg-gradient-to-r from-[#FF1493] to-[#FF69B4] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70 flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={18} /> Clear Team
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Trinket Selection Modal */}
+      {showTrinketModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] rounded-lg shadow-2xl shadow-[#00FFFF]/50 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-[#2D0A4E] flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-[#FF1493]">
+                Select Trinkets for {TOONS.find((t) => t.id === holdingToon)?.name}
+              </h2>
+              <button
+                onClick={() => setShowTrinketModal(false)}
+                className="p-2 hover:bg-[#2D0A4E] rounded-lg transition-colors"
+              >
+                <X size={24} className="text-[#FF1493]" />
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="p-4 border-b border-[#2D0A4E]">
+              <input
+                type="text"
+                placeholder="Search trinkets..."
+                value={trinketSearch}
+                onChange={(e) => setTrinketSearch(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-[#0f001a] border border-[#2D0A4E] text-white placeholder-gray-500 focus:border-[#00FFFF] focus:outline-none"
+              />
+            </div>
+
+            {/* Trinkets Grid */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {filteredTrinkets.map((trinket) => (
+                  <button
+                    key={trinket.id}
+                    onClick={() => addTrinketToToon(trinket.id)}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      selectedTrinkets.includes(trinket.id)
+                        ? "border-[#FF1493] bg-[#FF1493]/20 shadow-lg shadow-[#FF1493]/50"
+                        : "border-[#00FF00] bg-gradient-to-br from-[#0f001a] to-[#1a0033] hover:border-[#00FFFF]"
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">💎</div>
+                      <p className="text-xs font-semibold text-[#00FF00]">{trinket.name}</p>
+                      <p className="text-xs text-gray-500 mt-1">{trinket.category}</p>
+                      {selectedTrinkets.includes(trinket.id) && (
+                        <div className="text-xs text-[#FF1493] font-bold mt-2">✓ Selected</div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-[#2D0A4E] flex gap-3">
+              <Button
+                onClick={() => setShowTrinketModal(false)}
+                className="flex-1 bg-[#2D0A4E] hover:bg-[#3D1A5E] text-white font-bold px-6 py-2 rounded-lg transition-all"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmTrinkets}
+                className="flex-1 bg-gradient-to-r from-[#FF1493] to-[#FF69B4] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70"
+              >
+                Confirm ({selectedTrinkets.length})
+              </Button>
             </div>
           </div>
         </div>
-
-        {/* Team Summary */}
-        <div className="mt-12 p-6 rounded-lg bg-gradient-to-r from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] shadow-lg shadow-[#00FFFF]/30">
-          <h2 className="text-2xl font-bold text-[#FF1493] mb-4 flex items-center gap-2">
-            <span className="text-2xl">🎮</span> Your Team
-          </h2>
-
-          {selectedItems.length === 0 ? (
-            <p className="text-gray-400 text-center py-8">No items selected yet. Start building your team!</p>
-          ) : (
-            <div className="space-y-4">
-              {/* Toons */}
-              {selectedItems.filter((item) => item.type === "toon").length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-[#00FFFF] mb-3">Toons ({toonCount})</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedItems
-                      .filter((item) => item.type === "toon")
-                      .map((item) => (
-                        <div
-                          key={`${item.id}-${item.type}`}
-                          className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FF1493] to-[#FF69B4] text-white font-semibold text-sm shadow-lg shadow-[#FF1493]/50"
-                        >
-                          <span>{item.name}</span>
-                          <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">x{item.count}</span>
-                          <button
-                            onClick={() => decrementItem(item.id, item.type)}
-                            className="ml-1 hover:bg-white/20 rounded-full p-1 transition-colors"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Trinkets */}
-              {selectedItems.filter((item) => item.type === "trinket").length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-[#00FF00] mb-3">Trinkets ({trinketCount})</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedItems
-                      .filter((item) => item.type === "trinket")
-                      .map((item) => (
-                        <div
-                          key={`${item.id}-${item.type}`}
-                          className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#00FF00] to-[#00FFFF] text-[#0f001a] font-semibold text-sm shadow-lg shadow-[#00FF00]/50"
-                        >
-                          <span>{item.name}</span>
-                          <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">x{item.count}</span>
-                          <button
-                            onClick={() => decrementItem(item.id, item.type)}
-                            className="ml-1 hover:bg-white/20 rounded-full p-1 transition-colors"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Clear All Button */}
-              <div className="flex justify-end mt-6">
-                <Button
-                  onClick={() => setSelectedItems([])}
-                  className="bg-gradient-to-r from-[#FF1493] to-[#FF69B4] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70"
-                >
-                  Clear Team
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

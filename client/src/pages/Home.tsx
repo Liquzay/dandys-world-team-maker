@@ -47,6 +47,15 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const createCustomToonMutation = trpc.customToons.create.useMutation();
   const createCustomTrinketMutation = trpc.customTrinkets.create.useMutation();
+  const { data: customToons = [] } = trpc.customToons.list.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: customTrinkets = [] } = trpc.customTrinkets.list.useQuery(undefined, { enabled: isAuthenticated });
+  const utils = trpc.useUtils();
+  const deleteCustomToonMutation = trpc.customToons.delete.useMutation({
+    onSuccess: () => utils.customToons.list.invalidate(),
+  });
+  const deleteCustomTrinketMutation = trpc.customTrinkets.delete.useMutation({
+    onSuccess: () => utils.customTrinkets.list.invalidate(),
+  });
 
   // Load saved layouts from localStorage on mount
   useEffect(() => {
@@ -373,10 +382,10 @@ export default function Home() {
                 <span className="text-2xl">🎭</span> Toons
               </h2>
               <div className="grid grid-cols-2 gap-3 max-h-[700px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#FF1493] scrollbar-track-[#2D0A4E]">
-                {TOONS.map((toon) => (
+                {[...TOONS, ...customToons].map((toon) => (
                   <button
                     key={toon.id}
-                    onClick={() => addToon(toon.id, toon.name)}
+                    onClick={() => addToon(String(toon.id), toon.name)}
                     className="relative group p-3 rounded-lg bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FFFF] hover:border-[#FF1493] transition-all duration-200 hover:shadow-lg hover:shadow-[#FF1493]/50 transform hover:scale-105 active:scale-95"
                   >
                     <div className="text-center">
@@ -494,6 +503,13 @@ export default function Home() {
                               >
                                 <Plus size={14} />
                               </button>
+                              <button
+                                onClick={() => updateToonCount(index, 1)}
+                                className="p-1 rounded bg-[#FF1493]/20 hover:bg-[#FF1493]/40 text-[#FF1493] text-xs font-bold transition-colors"
+                                title="Disable multiplier (set to 1x)"
+                              >
+                                1x
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -607,12 +623,12 @@ export default function Home() {
             {/* Trinkets Grid */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {filteredTrinkets.map((trinket) => (
+                {[...filteredTrinkets, ...customTrinkets.filter(t => t.name.toLowerCase().includes(trinketSearch.toLowerCase()))].map((trinket) => (
                   <button
                     key={trinket.id}
-                    onClick={() => toggleTrinket(trinket.id)}
+                    onClick={() => toggleTrinket(String(trinket.id))}
                     className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                      tempTrinkets.includes(trinket.id)
+                      tempTrinkets.includes(String(trinket.id))
                         ? "border-[#FF1493] bg-[#FF1493]/20 shadow-lg shadow-[#FF1493]/50"
                         : "border-[#00FF00] bg-gradient-to-br from-[#0f001a] to-[#1a0033] hover:border-[#00FFFF]"
                     }`}
@@ -621,7 +637,7 @@ export default function Home() {
                       <div className="text-2xl mb-2">💎</div>
                       <p className="text-xs font-semibold text-[#00FF00]">{trinket.name}</p>
                       <p className="text-xs text-gray-500 mt-1">{trinket.category}</p>
-                      {tempTrinkets.includes(trinket.id) && (
+                      {tempTrinkets.includes(String(trinket.id)) && (
                         <div className="text-xs text-[#FF1493] font-bold mt-2">✓ Selected</div>
                       )}
                     </div>

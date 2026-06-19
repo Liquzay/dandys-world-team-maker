@@ -68,3 +68,31 @@ export const communityLayouts = mysqlTable("communityLayouts", {
 
 export type CommunityLayout = typeof communityLayouts.$inferSelect;
 export type InsertCommunityLayout = typeof communityLayouts.$inferInsert;
+
+// Custom Toons created by users
+export const customToons = mysqlTable("customToons", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustomToon = typeof customToons.$inferSelect;
+export type InsertCustomToon = typeof customToons.$inferInsert;
+
+// Custom Trinkets created by users
+export const customTrinkets = mysqlTable("customTrinkets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  category: varchar("category", { length: 64 }).notNull(),
+  rarity: varchar("rarity", { length: 64 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustomTrinket = typeof customTrinkets.$inferSelect;
+export type InsertCustomTrinket = typeof customTrinkets.$inferInsert;

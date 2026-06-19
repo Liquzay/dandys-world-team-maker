@@ -5,7 +5,7 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
 import { TOONS, TRINKETS } from "../client/src/data/characters";
-import { getUserProfile, upsertUserProfile, getUserRuns, createRun, updateRun, deleteRun, getCommunityLayouts, createCommunityLayout, likeCommunityLayout } from "./db";
+import { getUserProfile, upsertUserProfile, getUserRuns, createRun, updateRun, deleteRun, getCommunityLayouts, createCommunityLayout, likeCommunityLayout, getUserCustomToons, createCustomToon, deleteCustomToon, getUserCustomTrinkets, createCustomTrinket, deleteCustomTrinket } from "./db";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -189,6 +189,60 @@ Ensure all Toon and Trinket names match exactly from the lists above.`;
       .input(z.object({ layoutId: z.number() }))
       .mutation(async ({ input }) => {
         await likeCommunityLayout(input.layoutId);
+        return { success: true };
+      }),
+  }),
+
+  customToons: router({
+    list: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await getUserCustomToons(ctx.user.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await createCustomToon({
+          userId: ctx.user.id,
+          name: input.name,
+          description: input.description,
+        });
+      }),
+    delete: protectedProcedure
+      .input(z.object({ toonId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteCustomToon(input.toonId, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  customTrinkets: router({
+    list: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await getUserCustomTrinkets(ctx.user.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        category: z.string(),
+        rarity: z.string(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await createCustomTrinket({
+          userId: ctx.user.id,
+          name: input.name,
+          category: input.category,
+          rarity: input.rarity,
+          description: input.description,
+        });
+      }),
+    delete: protectedProcedure
+      .input(z.object({ trinketId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteCustomTrinket(input.trinketId, ctx.user.id);
         return { success: true };
       }),
   }),

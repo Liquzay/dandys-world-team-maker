@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, userProfiles, InsertUserProfile, runs, InsertRun, communityLayouts, InsertCommunityLayout } from "../drizzle/schema";
+import { InsertUser, users, userProfiles, InsertUserProfile, runs, InsertRun, communityLayouts, InsertCommunityLayout, customToons, InsertCustomToon, customTrinkets, InsertCustomTrinket } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -154,4 +154,44 @@ export async function likeCommunityLayout(layoutId: number) {
   if (layout.length > 0) {
     await db.update(communityLayouts).set({ likes: layout[0].likes + 1 }).where(eq(communityLayouts.id, layoutId));
   }
+}
+
+// Custom Toons functions
+export async function getUserCustomToons(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(customToons).where(eq(customToons.userId, userId)).orderBy(desc(customToons.createdAt));
+}
+
+export async function createCustomToon(toon: InsertCustomToon) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.insert(customToons).values(toon);
+  return result;
+}
+
+export async function deleteCustomToon(toonId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(customToons).where(eq(customToons.id, toonId) && eq(customToons.userId, userId));
+}
+
+// Custom Trinkets functions
+export async function getUserCustomTrinkets(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(customTrinkets).where(eq(customTrinkets.userId, userId)).orderBy(desc(customTrinkets.createdAt));
+}
+
+export async function createCustomTrinket(trinket: InsertCustomTrinket) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.insert(customTrinkets).values(trinket);
+  return result;
+}
+
+export async function deleteCustomTrinket(trinketId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(customTrinkets).where(eq(customTrinkets.id, trinketId) && eq(customTrinkets.userId, userId));
 }

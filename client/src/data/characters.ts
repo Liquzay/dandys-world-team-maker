@@ -123,7 +123,14 @@ export const TRINKETS: Trinket[] = [
   { id: "whispering-flower", name: "Whispering Flower", category: "lethal", rarity: "Lethal" },
   { id: "festive-lights", name: "Festive Lights", category: "lethal", rarity: "Lethal" },
   { id: "peppermint-icing", name: "Peppermint Icing", category: "lethal", rarity: "Lethal" },
-  { id: "coal", name: "Coal", category: "lethal", rarity: "Lethal" },
+
+  { id: "egg-radar", name: "Egg Radar", category: "lethal", rarity: "Lethal" },
+  { id: "marshmallow-bunny-sweets", name: "Marshmallow Bunny Sweets", category: "lethal", rarity: "Lethal" },
+  { id: "pumpkin-bucket", name: "Pumpkin Bucket", category: "lethal", rarity: "Lethal" },
+  { id: "gourdy-trinket", name: "Gourdy's Trinket", category: "lethal", rarity: "Lethal" },
+  { id: "winter-fashion-outfit", name: "Winter Fashion Outfit", category: "lethal", rarity: "Lethal" },
+  { id: "candy-canes", name: "Candy Canes", category: "lethal", rarity: "Lethal" },
+  { id: "sun-charm-highlighter", name: "Sun Charm Highlighter", category: "lethal", rarity: "Lethal" },
 ];
 
 export const TRINKET_CATEGORIES = {

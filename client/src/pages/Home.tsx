@@ -5,6 +5,7 @@ import { X, Copy, Trash2, Plus, Minus, Folder, Save, Wand2, Loader, Menu } from 
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import AccountPage from "./Account";
+import CommunityPage from "./Community";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 interface ToonWithTrinkets {
@@ -34,6 +35,7 @@ export default function Home() {
   const generateTeamMutation = trpc.team.generateRandomTeam.useMutation();
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showCommunityModal, setShowCommunityModal] = useState(false);
   const { user, isAuthenticated } = useAuth();
 
   // Load saved layouts from localStorage on mount
@@ -302,7 +304,7 @@ export default function Home() {
               <button
                 onClick={() => {
                   setShowMenu(false);
-                  toast.info("Community layouts coming soon!");
+                  setShowCommunityModal(true);
                 }}
                 className="w-full px-4 py-3 text-left text-[#00FFFF] hover:bg-[#2D0A4E] transition-colors font-semibold"
               >
@@ -830,6 +832,11 @@ export default function Home() {
       {/* Account Modal */}
       {showAccountModal && (
         <AccountPage onClose={() => setShowAccountModal(false)} />
+      )}
+
+      {/* Community Modal */}
+      {showCommunityModal && (
+        <CommunityPage onClose={() => setShowCommunityModal(false)} />
       )}
     </div>
   );

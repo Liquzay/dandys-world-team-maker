@@ -32,8 +32,13 @@ export default function CommunityPage({ onClose }: CommunityPageProps) {
   const likeMutation = trpc.community.like.useMutation();
 
   useEffect(() => {
-    if (communityQuery.data) {
-      setLayouts(communityQuery.data as unknown as CommunityLayout[]);
+    if (communityQuery.data && Array.isArray(communityQuery.data)) {
+      const layoutsWithCreator = communityQuery.data.map((layout: any) => ({
+        ...layout,
+        createdAt: new Date(layout.createdAt),
+        updatedAt: new Date(layout.updatedAt),
+      }));
+      setLayouts(layoutsWithCreator);
     }
   }, [communityQuery.data]);
 

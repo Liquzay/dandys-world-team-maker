@@ -131,6 +131,7 @@ export const TRINKETS: Trinket[] = [
   { id: "winter-fashion-outfit", name: "Winter Fashion Outfit", category: "lethal", rarity: "Lethal" },
   { id: "candy-canes", name: "Candy Canes", category: "lethal", rarity: "Lethal" },
   { id: "sun-charm-highlighter", name: "Sun Charm Highlighter", category: "lethal", rarity: "Lethal" },
+  { id: "glazed-fondant-bag", name: "Glazed Fondant Bag", category: "lethal", rarity: "Lethal" },
 ];
 
 export const TRINKET_CATEGORIES = {

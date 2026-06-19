@@ -36,7 +36,17 @@ export default function Home() {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showCommunityModal, setShowCommunityModal] = useState(false);
+  const [showCustomToonModal, setShowCustomToonModal] = useState(false);
+  const [showCustomTrinketModal, setShowCustomTrinketModal] = useState(false);
+  const [customToonName, setCustomToonName] = useState("");
+  const [customToonDesc, setCustomToonDesc] = useState("");
+  const [customTrinketName, setCustomTrinketName] = useState("");
+  const [customTrinketCategory, setCustomTrinketCategory] = useState("Shop");
+  const [customTrinketRarity, setCustomTrinketRarity] = useState("Common");
+  const [customTrinketDesc, setCustomTrinketDesc] = useState("");
   const { user, isAuthenticated } = useAuth();
+  const createCustomToonMutation = trpc.customToons.create.useMutation();
+  const createCustomTrinketMutation = trpc.customTrinkets.create.useMutation();
 
   // Load saved layouts from localStorage on mount
   useEffect(() => {
@@ -306,10 +316,32 @@ export default function Home() {
                   setShowMenu(false);
                   setShowCommunityModal(true);
                 }}
-                className="w-full px-4 py-3 text-left text-[#00FFFF] hover:bg-[#2D0A4E] transition-colors font-semibold"
+                className="w-full px-4 py-3 text-left text-[#00FFFF] hover:bg-[#2D0A4E] transition-colors border-b border-[#2D0A4E] font-semibold"
               >
                 🌍 Community
               </button>
+              {isAuthenticated && (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowCustomToonModal(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-[#00FF00] hover:bg-[#2D0A4E] transition-colors border-b border-[#2D0A4E] font-semibold"
+                  >
+                    ✨ Create Custom Toon
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCustomTrinketModal(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-[#00FF00] hover:bg-[#2D0A4E] transition-colors font-semibold"
+                  >
+                    💎 Create Custom Trinket
+                  </button>
+                </>
+              )}
             </div>
           )}
           <div className="text-sm text-[#00FF00] font-semibold">
@@ -837,6 +869,166 @@ export default function Home() {
       {/* Community Modal */}
       {showCommunityModal && (
         <CommunityPage onClose={() => setShowCommunityModal(false)} />
+      )}
+
+      {/* Custom Toon Modal */}
+      {showCustomToonModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#00FF00] rounded-lg shadow-2xl shadow-[#00FF00]/50 max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-[#00FF00]">Create Custom Toon</h2>
+              <button
+                onClick={() => setShowCustomToonModal(false)}
+                className="text-[#FF1493] hover:text-[#FF1493]/80"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[#00FFFF] font-semibold mb-2">Toon Name *</label>
+                <input
+                  type="text"
+                  value={customToonName}
+                  onChange={(e) => setCustomToonName(e.target.value)}
+                  placeholder="Enter toon name"
+                  className="w-full px-3 py-2 bg-[#2D0A4E] border border-[#00FFFF] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#00FF00]"
+                />
+              </div>
+              <div>
+                <label className="block text-[#00FFFF] font-semibold mb-2">Description (optional)</label>
+                <textarea
+                  value={customToonDesc}
+                  onChange={(e) => setCustomToonDesc(e.target.value)}
+                  placeholder="Describe your custom toon"
+                  className="w-full px-3 py-2 bg-[#2D0A4E] border border-[#00FFFF] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#00FF00] h-24"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  if (!customToonName.trim()) {
+                    toast.error("Please enter a toon name");
+                    return;
+                  }
+                  createCustomToonMutation.mutate(
+                    { name: customToonName, description: customToonDesc },
+                    {
+                      onSuccess: () => {
+                        toast.success("Custom toon created!");
+                        setCustomToonName("");
+                        setCustomToonDesc("");
+                        setShowCustomToonModal(false);
+                      },
+                      onError: () => {
+                        toast.error("Failed to create custom toon");
+                      },
+                    }
+                  );
+                }}
+                className="w-full px-4 py-2 bg-gradient-to-r from-[#00FF00] to-[#00FFFF] text-black font-bold rounded-lg hover:shadow-lg hover:shadow-[#00FF00]/50 transition-all"
+              >
+                {createCustomToonMutation.isPending ? "Creating..." : "Create Toon"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Trinket Modal */}
+      {showCustomTrinketModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#FF1493] rounded-lg shadow-2xl shadow-[#FF1493]/50 max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-[#FF1493]">Create Custom Trinket</h2>
+              <button
+                onClick={() => setShowCustomTrinketModal(false)}
+                className="text-[#00FFFF] hover:text-[#00FFFF]/80"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[#00FFFF] font-semibold mb-2">Trinket Name *</label>
+                <input
+                  type="text"
+                  value={customTrinketName}
+                  onChange={(e) => setCustomTrinketName(e.target.value)}
+                  placeholder="Enter trinket name"
+                  className="w-full px-3 py-2 bg-[#2D0A4E] border border-[#00FFFF] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#FF1493]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#00FFFF] font-semibold mb-2">Category *</label>
+                  <select
+                    value={customTrinketCategory}
+                    onChange={(e) => setCustomTrinketCategory(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#2D0A4E] border border-[#00FFFF] rounded-lg text-white focus:outline-none focus:border-[#FF1493]"
+                  >
+                    <option>Shop</option>
+                    <option>Twisted</option>
+                    <option>Event</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[#00FFFF] font-semibold mb-2">Rarity *</label>
+                  <select
+                    value={customTrinketRarity}
+                    onChange={(e) => setCustomTrinketRarity(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#2D0A4E] border border-[#00FFFF] rounded-lg text-white focus:outline-none focus:border-[#FF1493]"
+                  >
+                    <option>Common</option>
+                    <option>Uncommon</option>
+                    <option>Rare</option>
+                    <option>Lethal</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[#00FFFF] font-semibold mb-2">Description (optional)</label>
+                <textarea
+                  value={customTrinketDesc}
+                  onChange={(e) => setCustomTrinketDesc(e.target.value)}
+                  placeholder="Describe your custom trinket"
+                  className="w-full px-3 py-2 bg-[#2D0A4E] border border-[#00FFFF] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#FF1493] h-20"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  if (!customTrinketName.trim()) {
+                    toast.error("Please enter a trinket name");
+                    return;
+                  }
+                  createCustomTrinketMutation.mutate(
+                    {
+                      name: customTrinketName,
+                      category: customTrinketCategory,
+                      rarity: customTrinketRarity,
+                      description: customTrinketDesc,
+                    },
+                    {
+                      onSuccess: () => {
+                        toast.success("Custom trinket created!");
+                        setCustomTrinketName("");
+                        setCustomTrinketCategory("Shop");
+                        setCustomTrinketRarity("Common");
+                        setCustomTrinketDesc("");
+                        setShowCustomTrinketModal(false);
+                      },
+                      onError: () => {
+                        toast.error("Failed to create custom trinket");
+                      },
+                    }
+                  );
+                }}
+                className="w-full px-4 py-2 bg-gradient-to-r from-[#FF1493] to-[#00FFFF] text-black font-bold rounded-lg hover:shadow-lg hover:shadow-[#FF1493]/50 transition-all"
+              >
+                {createCustomTrinketMutation.isPending ? "Creating..." : "Create Trinket"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

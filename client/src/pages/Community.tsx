@@ -27,6 +27,8 @@ export default function CommunityPage({ onClose }: CommunityPageProps) {
   const [layouts, setLayouts] = useState<CommunityLayout[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedLayout, setSelectedLayout] = useState<CommunityLayout | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"newest" | "mostLiked">("newest");
 
   const communityQuery = trpc.community.list.useQuery({ limit: 50, offset: 0 });
   const likeMutation = trpc.community.like.useMutation();
@@ -77,6 +79,39 @@ export default function CommunityPage({ onClose }: CommunityPageProps) {
           </button>
         </div>
 
+        {/* Search and Sort */}
+        <div className="p-4 border-b border-[#2D0A4E] space-y-3">
+          <input
+            type="text"
+            placeholder="Search teams..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 rounded-lg bg-[#0f001a] border border-[#2D0A4E] text-white placeholder-gray-500 focus:border-[#00FF00] focus:outline-none"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSortBy("newest")}
+              className={`flex-1 px-3 py-2 rounded-lg font-semibold transition-all ${
+                sortBy === "newest"
+                  ? "bg-[#00FF00] text-[#0f001a]"
+                  : "bg-[#2D0A4E] text-[#00FF00] hover:bg-[#3D1A5E]"
+              }`}
+            >
+              Newest
+            </button>
+            <button
+              onClick={() => setSortBy("mostLiked")}
+              className={`flex-1 px-3 py-2 rounded-lg font-semibold transition-all ${
+                sortBy === "mostLiked"
+                  ? "bg-[#FF1493] text-white"
+                  : "bg-[#2D0A4E] text-[#FF1493] hover:bg-[#3D1A5E]"
+              }`}
+            >
+              Most Liked
+            </button>
+          </div>
+        </div>
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {communityQuery.isLoading ? (
@@ -88,9 +123,29 @@ export default function CommunityPage({ onClose }: CommunityPageProps) {
               <p className="text-gray-400 text-lg">No community layouts yet.</p>
               <p className="text-gray-500 text-sm mt-2">Be the first to share your team!</p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {layouts.map((layout) => (
+          ) : (() => {
+            const filteredLayouts = layouts
+              .filter((layout) =>
+                layout.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                layout.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (layout.creatorUsername || "").toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .sort((a, b) => {
+                if (sortBy === "mostLiked") {
+                  return b.likes - a.likes;
+                } else {
+                  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                }
+              });
+
+            return filteredLayouts.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-400 text-lg">No teams match your search.</p>
+                <p className="text-gray-500 text-sm mt-2">Try adjusting your search query.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredLayouts.map((layout) => (
                 <div
                   key={layout.id}
                   className="p-4 rounded-lg bg-gradient-to-br from-[#0f001a] to-[#1a0033] border border-[#00FF00]/30 hover:border-[#00FF00] transition-all group"
@@ -129,8 +184,9 @@ export default function CommunityPage({ onClose }: CommunityPageProps) {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Footer */}

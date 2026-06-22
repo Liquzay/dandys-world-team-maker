@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { TOONS, TRINKETS } from "@/data/characters";
 import { Button } from "@/components/ui/button";
-import { X, Copy, Trash2, Plus, Minus, Folder, Save, Wand2, Loader, Menu } from "lucide-react";
+import { X, Copy, Trash2, Plus, Minus, Folder, Save, Wand2, Loader, Menu, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import AccountPage from "./Account";
@@ -44,11 +44,17 @@ export default function Home() {
   const [customTrinketCategory, setCustomTrinketCategory] = useState("Shop");
   const [customTrinketRarity, setCustomTrinketRarity] = useState("Common");
   const [customTrinketDesc, setCustomTrinketDesc] = useState("");
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareTeamName, setShareTeamName] = useState("");
+  const [shareTeamDesc, setShareTeamDesc] = useState("");
   const { user, isAuthenticated } = useAuth();
   const createCustomToonMutation = trpc.customToons.create.useMutation();
   const createCustomTrinketMutation = trpc.customTrinkets.create.useMutation();
+<<<<<<< Updated upstream
   const { data: customToons = [] } = trpc.customToons.list.useQuery(undefined, { enabled: isAuthenticated });
   const { data: customTrinkets = [] } = trpc.customTrinkets.list.useQuery(undefined, { enabled: isAuthenticated });
+=======
+>>>>>>> Stashed changes
   const utils = trpc.useUtils();
   const deleteCustomToonMutation = trpc.customToons.delete.useMutation({
     onSuccess: () => utils.customToons.list.invalidate(),
@@ -56,6 +62,22 @@ export default function Home() {
   const deleteCustomTrinketMutation = trpc.customTrinkets.delete.useMutation({
     onSuccess: () => utils.customTrinkets.list.invalidate(),
   });
+<<<<<<< Updated upstream
+=======
+  const shareTeamMutation = trpc.community.create.useMutation({
+    onSuccess: () => {
+      toast.success("Team shared to community!");
+      setShowShareModal(false);
+      setShareTeamName("");
+      setShareTeamDesc("");
+      utils.community.list.invalidate();
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to share team");
+    },
+  });
+  const { data: userProfile } = trpc.profile.getProfile.useQuery(undefined, { enabled: isAuthenticated });
+>>>>>>> Stashed changes
 
   // Load saved layouts from localStorage on mount
   useEffect(() => {
@@ -271,6 +293,44 @@ export default function Home() {
   const startRenaming = (index: number) => {
     setRenamingToonIndex(index);
     setRenameToonValue(team[index].customName || "");
+  };
+
+  // Share team to community
+  const shareTeam = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to share teams");
+      return;
+    }
+
+    if (!userProfile?.robloxUsername) {
+      toast.error("Please set your Roblox username in Account settings first");
+      return;
+    }
+
+    if (!shareTeamName.trim()) {
+      toast.error("Please enter a team name");
+      return;
+    }
+
+    if (!shareTeamDesc.trim()) {
+      toast.error("Please enter a description");
+      return;
+    }
+
+    if (team.length === 0) {
+      toast.error("Please build a team first");
+      return;
+    }
+
+    try {
+      await shareTeamMutation.mutateAsync({
+        name: shareTeamName,
+        description: shareTeamDesc,
+        teamData: JSON.stringify(team),
+      });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // Filter trinkets based on search
@@ -579,6 +639,14 @@ export default function Home() {
                   >
                     <Trash2 size={18} /> Clear Team
                   </Button>
+                  {isAuthenticated && (
+                    <Button
+                      onClick={() => setShowShareModal(true)}
+                      className="bg-gradient-to-r from-[#FF6B9D] to-[#FFC75F] hover:from-[#FFC75F] hover:to-[#FF6B9D] text-[#0f001a] font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF6B9D]/50 transition-all hover:shadow-[#FF6B9D]/70 flex items-center justify-center gap-2"
+                    >
+                      <Share2 size={18} /> Share
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -1042,6 +1110,73 @@ export default function Home() {
               >
                 {createCustomTrinketMutation.isPending ? "Creating..." : "Create Trinket"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share to Community Modal */}
+      {showShareModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowShareModal(false)}
+        >
+          <div 
+            className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#FF6B9D] rounded-lg shadow-2xl shadow-[#FF6B9D]/50 max-w-md w-full overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-[#2D0A4E] flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-[#FF6B9D]">Share Team to Community</h2>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="p-2 hover:bg-[#2D0A4E] rounded-lg transition-colors"
+              >
+                <X size={24} className="text-[#FF6B9D]" />
+              </button>
+            </div>
+            <div className="p-6 flex-1 space-y-4">
+              <div>
+                <label className="block text-[#00FFFF] font-semibold mb-2">Team Name</label>
+                <input
+                  type="text"
+                  value={shareTeamName}
+                  onChange={(e) => setShareTeamName(e.target.value)}
+                  placeholder="e.g., Speed Runner Build"
+                  className="w-full px-4 py-2 rounded-lg bg-[#0f001a] border border-[#2D0A4E] text-white placeholder-gray-500 focus:border-[#FF6B9D] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[#00FFFF] font-semibold mb-2">Description</label>
+                <textarea
+                  value={shareTeamDesc}
+                  onChange={(e) => setShareTeamDesc(e.target.value)}
+                  placeholder="Describe your team strategy and why it's effective..."
+                  className="w-full px-4 py-3 rounded-lg bg-[#0f001a] border border-[#2D0A4E] text-white placeholder-gray-500 focus:border-[#FF6B9D] focus:outline-none resize-none h-24"
+                />
+              </div>
+            </div>
+            <div className="p-6 border-t border-[#2D0A4E] flex gap-3">
+              <Button
+                onClick={() => setShowShareModal(false)}
+                className="flex-1 bg-[#2D0A4E] hover:bg-[#3D1A5E] text-white font-bold px-6 py-2 rounded-lg transition-all cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={shareTeam}
+                disabled={shareTeamMutation.isPending}
+                className="flex-1 bg-gradient-to-r from-[#FF6B9D] to-[#FFC75F] hover:from-[#FFC75F] hover:to-[#FF6B9D] text-[#0f001a] font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF6B9D]/50 transition-all hover:shadow-[#FF6B9D]/70 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {shareTeamMutation.isPending ? (
+                  <>
+                    <Loader size={16} className="animate-spin" /> Sharing...
+                  </>
+                ) : (
+                  <>
+                    <Share2 size={16} /> Share Team
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>

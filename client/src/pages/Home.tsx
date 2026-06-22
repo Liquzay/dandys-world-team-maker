@@ -50,11 +50,8 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const createCustomToonMutation = trpc.customToons.create.useMutation();
   const createCustomTrinketMutation = trpc.customTrinkets.create.useMutation();
-<<<<<<< Updated upstream
   const { data: customToons = [] } = trpc.customToons.list.useQuery(undefined, { enabled: isAuthenticated });
   const { data: customTrinkets = [] } = trpc.customTrinkets.list.useQuery(undefined, { enabled: isAuthenticated });
-=======
->>>>>>> Stashed changes
   const utils = trpc.useUtils();
   const deleteCustomToonMutation = trpc.customToons.delete.useMutation({
     onSuccess: () => utils.customToons.list.invalidate(),
@@ -62,8 +59,6 @@ export default function Home() {
   const deleteCustomTrinketMutation = trpc.customTrinkets.delete.useMutation({
     onSuccess: () => utils.customTrinkets.list.invalidate(),
   });
-<<<<<<< Updated upstream
-=======
   const shareTeamMutation = trpc.community.create.useMutation({
     onSuccess: () => {
       toast.success("Team shared to community!");
@@ -77,7 +72,6 @@ export default function Home() {
     },
   });
   const { data: userProfile } = trpc.profile.getProfile.useQuery(undefined, { enabled: isAuthenticated });
->>>>>>> Stashed changes
 
   // Load saved layouts from localStorage on mount
   useEffect(() => {

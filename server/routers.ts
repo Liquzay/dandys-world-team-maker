@@ -185,6 +185,38 @@ Ensure all Toon and Trinket names match exactly from the lists above.`;
       .query(async ({ input }) => {
         return await getCommunityLayouts(input.limit, input.offset);
       }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        team: z.any(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // First create a run
+        const run = await createRun({
+          userId: ctx.user.id,
+          name: input.name,
+          description: input.description || "",
+          teamData: JSON.stringify(input.team),
+          isPublic: 1,
+        });
+        
+        if (!run) {
+          throw new Error("Failed to create run");
+        }
+        
+        // Get the inserted ID from the result
+        const runId = (run as any).insertId || (run as any)[0];
+        
+        // Then create a community layout pointing to that run
+        return await createCommunityLayout({
+          userId: ctx.user.id,
+          runId: runId,
+          name: input.name,
+          description: input.description || "",
+          teamData: JSON.stringify(input.team),
+        });
+      }),
     like: publicProcedure
       .input(z.object({ layoutId: z.number() }))
       .mutation(async ({ input }) => {

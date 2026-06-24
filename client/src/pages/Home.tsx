@@ -47,6 +47,7 @@ export default function Home() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareTeamName, setShareTeamName] = useState("");
   const [shareTeamDesc, setShareTeamDesc] = useState("");
+  const [showDeleteCustomItemsModal, setShowDeleteCustomItemsModal] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const createCustomToonMutation = trpc.customToons.create.useMutation();
   const createCustomTrinketMutation = trpc.customTrinkets.create.useMutation();
@@ -319,8 +320,8 @@ export default function Home() {
     try {
       await shareTeamMutation.mutateAsync({
         name: shareTeamName,
-        description: shareTeamDesc,
-        teamData: JSON.stringify(team),
+        description: shareTeamDesc || "",
+        team: team,
       });
     } catch (error) {
       console.error(error);
@@ -399,9 +400,18 @@ export default function Home() {
                       setShowCustomTrinketModal(true);
                       setShowMenu(false);
                     }}
-                    className="w-full px-4 py-3 text-left text-[#00FF00] hover:bg-[#2D0A4E] transition-colors font-semibold"
+                    className="w-full px-4 py-3 text-left text-[#00FF00] hover:bg-[#2D0A4E] transition-colors border-b border-[#2D0A4E] font-semibold"
                   >
                     💎 Create Custom Trinket
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowDeleteCustomItemsModal(true);
+                    }}
+                    className="w-full px-4 py-3 text-left text-[#FF1493] hover:bg-[#2D0A4E] transition-colors font-semibold"
+                  >
+                    🗑️ Delete Custom Items
                   </button>
                 </>
               )}
@@ -685,26 +695,40 @@ export default function Home() {
             {/* Trinkets Grid */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[...filteredTrinkets, ...customTrinkets.filter(t => t.name.toLowerCase().includes(trinketSearch.toLowerCase()))].map((trinket) => (
-                  <button
-                    key={trinket.id}
-                    onClick={() => toggleTrinket(String(trinket.id))}
-                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                      tempTrinkets.includes(String(trinket.id))
-                        ? "border-[#FF1493] bg-[#FF1493]/20 shadow-lg shadow-[#FF1493]/50"
-                        : "border-[#00FF00] bg-gradient-to-br from-[#0f001a] to-[#1a0033] hover:border-[#00FFFF]"
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">💎</div>
-                      <p className="text-xs font-semibold text-[#00FF00]">{trinket.name}</p>
-                      <p className="text-xs text-gray-500 mt-1">{trinket.category}</p>
-                      {tempTrinkets.includes(String(trinket.id)) && (
-                        <div className="text-xs text-[#FF1493] font-bold mt-2">✓ Selected</div>
-                      )}
-                    </div>
-                  </button>
-                ))}
+                {[...filteredTrinkets, ...customTrinkets.filter(t => t.name.toLowerCase().includes(trinketSearch.toLowerCase()))].map((trinket) => {
+                  const isCustom = customTrinkets.some(ct => ct.id === trinket.id);
+                  return (
+                  <div key={trinket.id} className="relative group">
+                    <button
+                      onClick={() => toggleTrinket(String(trinket.id))}
+                      className={`w-full p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                        tempTrinkets.includes(String(trinket.id))
+                          ? "border-[#FF1493] bg-[#FF1493]/20 shadow-lg shadow-[#FF1493]/50"
+                          : "border-[#00FF00] bg-gradient-to-br from-[#0f001a] to-[#1a0033] hover:border-[#00FFFF]"
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">💎</div>
+                        <p className="text-xs font-semibold text-[#00FF00]">{trinket.name}</p>
+                        <p className="text-xs text-gray-500 mt-1">{trinket.category}</p>
+                        {isCustom && <p className="text-xs text-[#FFC75F] font-bold mt-1">✨ Custom</p>}
+                        {tempTrinkets.includes(String(trinket.id)) && (
+                          <div className="text-xs text-[#FF1493] font-bold mt-2">✓ Selected</div>
+                        )}
+                      </div>
+                    </button>
+                    {isCustom && (
+                      <button
+                        onClick={() => deleteCustomTrinketMutation.mutate({ trinketId: trinket.id as number })}
+                        className="absolute top-2 right-2 p-1 bg-[#FF1493] hover:bg-[#FF69B4] text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Delete custom trinket"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -1170,6 +1194,89 @@ export default function Home() {
                     <Share2 size={16} /> Share Team
                   </>
                 )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Custom Items Modal */}
+      {showDeleteCustomItemsModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowDeleteCustomItemsModal(false)}
+        >
+          <div 
+            className="bg-gradient-to-br from-[#1a0033] to-[#0f001a] border-2 border-[#FF1493] rounded-lg shadow-2xl shadow-[#FF1493]/50 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-[#2D0A4E] flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-[#FF1493]">Delete Custom Items</h2>
+              <button
+                onClick={() => setShowDeleteCustomItemsModal(false)}
+                className="p-2 hover:bg-[#2D0A4E] rounded-lg transition-colors"
+              >
+                <X size={24} className="text-[#FF1493]" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {customToons.length === 0 && customTrinkets.length === 0 ? (
+                <p className="text-gray-400 text-center py-8">No custom items to delete.</p>
+              ) : (
+                <>
+                  {customToons.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-bold text-[#00FF00] mb-3">Custom Toons</h3>
+                      <div className="space-y-2">
+                        {customToons.map((toon) => (
+                          <div
+                            key={toon.id}
+                            className="flex items-center justify-between p-3 bg-[#0f001a] border border-[#2D0A4E] rounded-lg hover:border-[#FF1493] transition-colors"
+                          >
+                            <span className="text-[#00FF00] font-semibold">{toon.name}</span>
+                            <button
+                              onClick={() => deleteCustomToonMutation.mutate({ toonId: toon.id })}
+                              className="p-2 bg-[#FF1493] hover:bg-[#FF69B4] text-white rounded-lg transition-colors"
+                              title="Delete custom toon"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {customTrinkets.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-bold text-[#00FFFF] mb-3">Custom Trinkets</h3>
+                      <div className="space-y-2">
+                        {customTrinkets.map((trinket) => (
+                          <div
+                            key={trinket.id}
+                            className="flex items-center justify-between p-3 bg-[#0f001a] border border-[#2D0A4E] rounded-lg hover:border-[#FF1493] transition-colors"
+                          >
+                            <span className="text-[#00FFFF] font-semibold">{trinket.name}</span>
+                            <button
+                              onClick={() => deleteCustomTrinketMutation.mutate({ trinketId: trinket.id })}
+                              className="p-2 bg-[#FF1493] hover:bg-[#FF69B4] text-white rounded-lg transition-colors"
+                              title="Delete custom trinket"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="p-6 border-t border-[#2D0A4E]">
+              <Button
+                onClick={() => setShowDeleteCustomItemsModal(false)}
+                className="w-full bg-gradient-to-r from-[#FF1493] to-[#FF69B4] hover:from-[#FF1493] hover:to-[#FF1493] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#FF1493]/50 transition-all hover:shadow-[#FF1493]/70 cursor-pointer"
+              >
+                Close
               </Button>
             </div>
           </div>

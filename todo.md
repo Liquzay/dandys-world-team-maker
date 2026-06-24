@@ -17,8 +17,8 @@
 ## Planned Improvements
 - [x] Add search and filtering/sorting to Community browser (newest, most liked)
 - [x] Add hover tooltips or detail panel showing specific in-game effects and stats for each Trinket
-- [ ] Add team statistics/analysis (total power, synergy, balance)
-- [ ] Add team export/import functionality (JSON format)
+- [x] Add team statistics/analysis (total power, synergy, balance)
+- [x] Add team export/import functionality (JSON format)
 - [ ] Add team history/undo functionality
 - [ ] Add keyboard shortcuts for common actions
 - [ ] Add dark/light theme toggle

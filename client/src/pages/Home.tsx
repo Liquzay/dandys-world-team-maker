@@ -200,6 +200,72 @@ export default function Home() {
     toast.success("Team copied to clipboard!");
   };
 
+  // Export team to JSON
+  const exportTeam = () => {
+    const teamData = {
+      timestamp: new Date().toISOString(),
+      team: team.map(t => ({
+        toonId: t.toonId,
+        toonName: t.toonName,
+        customName: t.customName,
+        count: t.count,
+        trinkets: t.trinkets
+      }))
+    };
+    
+    const dataStr = JSON.stringify(teamData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dandy-team-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Team exported successfully!");
+  };
+
+  // Import team from JSON
+  const importTeam = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content);
+        
+        if (!data.team || !Array.isArray(data.team)) {
+          toast.error("Invalid team file format");
+          return;
+        }
+        
+        const importedTeam = data.team.map((t: any) => ({
+          toonId: t.toonId,
+          toonName: t.toonName,
+          customName: t.customName || t.toonName,
+          count: Math.max(1, Math.min(8, t.count || 1)),
+          trinkets: Array.isArray(t.trinkets) ? t.trinkets : []
+        }));
+        
+        setTeam(importedTeam);
+        toast.success("Team imported successfully!");
+      } catch (error) {
+        toast.error("Failed to import team: Invalid JSON");
+        console.error(error);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) importTeam(file);
+    };
+    input.click();
+  };
+
   // Clear entire team
   const clearTeam = () => {
     setTeam([]);
@@ -649,6 +715,18 @@ export default function Home() {
                     className="bg-gradient-to-r from-[#9D4EDD] to-[#7209B7] hover:from-[#7209B7] hover:to-[#9D4EDD] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#9D4EDD]/50 transition-all hover:shadow-[#9D4EDD]/70 flex items-center justify-center gap-2"
                   >
                     <Wand2 size={18} /> Random
+                  </Button>
+                  <Button
+                    onClick={exportTeam}
+                    className="bg-gradient-to-r from-[#3A86FF] to-[#06FFA5] hover:from-[#06FFA5] hover:to-[#3A86FF] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#3A86FF]/50 transition-all hover:shadow-[#3A86FF]/70 flex items-center justify-center gap-2"
+                  >
+                    📥 Export
+                  </Button>
+                  <Button
+                    onClick={handleImportClick}
+                    className="bg-gradient-to-r from-[#3A86FF] to-[#06FFA5] hover:from-[#06FFA5] hover:to-[#3A86FF] text-white font-bold px-6 py-2 rounded-lg shadow-lg shadow-[#3A86FF]/50 transition-all hover:shadow-[#3A86FF]/70 flex items-center justify-center gap-2"
+                  >
+                    📤 Import
                   </Button>
                   <Button
                     onClick={clearTeam}

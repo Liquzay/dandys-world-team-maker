@@ -11,10 +11,12 @@
 - [x] Delete buttons in selection pickers for custom Toons and Trinkets
 - [x] Visual indicators (✨ Custom label) for custom items
 - [x] Implement 'Share to Community' button on main page to allow users to easily publish their current team
+- [x] Fixed custom trinkets display with delete buttons in trinket picker
+- [x] Added delete custom items modal in hamburger menu
 
 ## Planned Improvements
 - [x] Add search and filtering/sorting to Community browser (newest, most liked)
-- [ ] Add hover tooltips or detail panel showing specific in-game effects and stats for each Trinket
+- [x] Add hover tooltips or detail panel showing specific in-game effects and stats for each Trinket
 - [ ] Add team statistics/analysis (total power, synergy, balance)
 - [ ] Add team export/import functionality (JSON format)
 - [ ] Add team history/undo functionality

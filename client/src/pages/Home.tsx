@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { TOONS, TRINKETS } from "@/data/characters";
+import trinketEffects from "@/data/trinketEffects.json";
 import { Button } from "@/components/ui/button";
-import { X, Copy, Trash2, Plus, Minus, Folder, Save, Wand2, Loader, Menu, Share2 } from "lucide-react";
+import { X, Copy, Trash2, Plus, Minus, Folder, Save, Wand2, Loader, Menu, Share2, Info } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import AccountPage from "./Account";
 import CommunityPage from "./Community";
+import { TeamStatsPanel } from "@/components/TeamStatsPanel";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 interface ToonWithTrinkets {
@@ -477,6 +479,17 @@ export default function Home() {
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Team Stats Panel */}
+                <TeamStatsPanel 
+                  team={{
+                    toons: team.reduce((acc: Record<string, number>, t: any) => {
+                      acc[t.toonId] = (acc[t.toonId] || 0) + t.count;
+                      return acc;
+                    }, {}),
+                    trinkets: team.flatMap(t => t.trinkets)
+                  }}
+                  trinketNames={Object.fromEntries(TRINKETS.map(t => [t.id, t.name]))}
+                />
                 {/* Team Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {team.map((toon, index) => {
@@ -697,6 +710,7 @@ export default function Home() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[...filteredTrinkets, ...customTrinkets.filter(t => t.name.toLowerCase().includes(trinketSearch.toLowerCase()))].map((trinket) => {
                   const isCustom = customTrinkets.some(ct => ct.id === trinket.id);
+                  const effect = trinketEffects[trinket.id as keyof typeof trinketEffects] || "No effect data available";
                   return (
                   <div key={trinket.id} className="relative group">
                     <button
@@ -717,6 +731,12 @@ export default function Home() {
                         )}
                       </div>
                     </button>
+                    {/* Tooltip with effect */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                      <div className="bg-[#0f001a] border border-[#FF1493] rounded-lg p-2 whitespace-nowrap text-xs text-[#00FFFF] shadow-lg">
+                        {effect}
+                      </div>
+                    </div>
                     {isCustom && (
                       <button
                         onClick={() => deleteCustomTrinketMutation.mutate({ trinketId: trinket.id as number })}

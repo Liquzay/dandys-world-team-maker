@@ -59,8 +59,8 @@ export default function Landing() {
               <div className="absolute inset-0 bg-gradient-to-br from-[#FF1493]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative z-10">
                 <div className="mb-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-[#FF1493] to-[#FF69B4] rounded-lg flex items-center justify-center mb-4">
-                    <Gamepad2 size={32} className="text-white" />
+                  <div className="w-16 h-16 rounded-lg flex items-center justify-center mb-4 overflow-hidden">
+                    <img src="/manus-storage/images(4)_31d7f656.jpeg" alt="Dandy's World" className="w-full h-full object-cover" />
                   </div>
                   <h4 className="text-3xl font-bold text-[#FF1493] mb-2">Dandy's World</h4>
                 </div>
@@ -149,7 +149,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="py-12 px-4 border-t border-white/10">
         <div className="max-w-6xl mx-auto text-center text-gray-400">
-          <p className="mb-4">© 2026 Dandy's World Team Maker. All rights reserved.</p>
+          <p className="mb-4">© 2026 Game Builder. All rights reserved.</p>
           <p className="text-sm">Build your perfect team and dominate the games!</p>
         </div>
       </footer>

@@ -39,7 +39,14 @@ export default function AnimalHospital() {
   };
 
   const copyTeamToClipboard = () => {
-    const teamText = team
+    let teamText = "";
+    
+    // Add "At Start" text if provided
+    if (atStartText.trim()) {
+      teamText = atStartText.trim() + "\n";
+    }
+    
+    teamText += team
       .map(t => `${t.className}${t.count > 1 ? ` (${t.count}x)` : ""}`)
       .join("\n");
     

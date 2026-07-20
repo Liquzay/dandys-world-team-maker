@@ -149,3 +149,18 @@ export const TOON_CATEGORIES = {
   event: "Event Toons",
   lethal: "Lethal Toons",
 };
+
+
+// Animal Hospital Classes
+export const ANIMAL_HOSPITAL_CLASSES = [
+  { id: "intern", name: "Intern", description: "A baseline healer class that is an excellent choice for learning the map and core hospital mechanics." },
+  { id: "nurse", name: "Nurse", description: "A reliable medical class that focuses on healing patients efficiently to maintain team progress." },
+  { id: "paramedic", name: "Paramedic", description: "A fast-moving, high-utility support role capable of reaching and treating patients rapidly." },
+  { id: "doctor", name: "Doctor", description: "A premier healing class featuring passive sanity retention to stay composed during high-threat events." },
+  { id: "surgeon", name: "Surgeon", description: "The strongest free class in the game, granting massive speed and sanity buffs every time you heal a patient." },
+  { id: "secretary", name: "Secretary", description: "A supportive utility class focused on managing tasks and helping coordinate hospital workflows." },
+  { id: "psychologist", name: "Psychologist", description: "A mental-health support class specialized in managing and restoring your teammates' critical sanity levels." },
+  { id: "security", name: "Security", description: "A defense-heavy class equipped to arrest threats, handle anomalies, and protect the team." },
+  { id: "secret-agent", name: "Secret Agent", description: "A high-utility, specialized stealth class built to gather info and avoid dangerous entity encounters." },
+  { id: "head-nurse", name: "Head Nurse", description: "A premium class unlocked exclusively using Robux, granting passive sanity buffs and higher starting item capacity." },
+];

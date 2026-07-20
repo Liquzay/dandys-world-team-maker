@@ -787,7 +787,7 @@ export default function Home() {
             <div className="flex-1 overflow-y-auto p-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[...filteredTrinkets, ...customTrinkets.filter(t => t.name.toLowerCase().includes(trinketSearch.toLowerCase()))].map((trinket) => {
-                  const isCustom = customTrinkets.some(ct => ct.id === trinket.id);
+                  const isCustom = typeof trinket.id === 'number' || customTrinkets.some(ct => ct.id === trinket.id);
                   const effect = trinketEffects[trinket.id as keyof typeof trinketEffects] || "No effect data available";
                   return (
                   <div key={trinket.id} className="relative group">

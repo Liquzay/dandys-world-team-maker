@@ -13,6 +13,7 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/dandy-world"} component={Home} />
       <Route path={"/animal-hospital"} component={AnimalHospital} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
@@ -28,7 +29,7 @@ function ThemeSwitcher() {
   return (
     <div className="fixed top-4 right-4 z-50 flex gap-2">
       <a
-        href="/"
+        href="/dandy-world"
         className={`px-4 py-2 rounded-lg font-bold transition-all ${
           !isAnimalHospital
             ? "bg-[#FF1493] text-white shadow-lg shadow-[#FF1493]/50"

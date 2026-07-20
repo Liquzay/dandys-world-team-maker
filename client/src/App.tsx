@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import Landing from "./pages/Landing";
 import Home from "./pages/Home";
 import AnimalHospital from "./pages/AnimalHospital";
 import { useState } from "react";
@@ -12,7 +13,7 @@ function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      <Route path={"/"} component={Landing} />
       <Route path={"/dandy-world"} component={Home} />
       <Route path={"/animal-hospital"} component={AnimalHospital} />
       <Route path={"/404"} component={NotFound} />
@@ -25,13 +26,18 @@ function Router() {
 function ThemeSwitcher() {
   const [location] = useLocation();
   const isAnimalHospital = location === "/animal-hospital";
+  const isDandysWorld = location === "/dandy-world";
+  const isLanding = location === "/";
+  
+  // Only show theme switcher on game pages, not on landing
+  if (isLanding) return null;
   
   return (
     <div className="fixed top-4 right-4 z-50 flex gap-2">
       <a
         href="/dandy-world"
         className={`px-4 py-2 rounded-lg font-bold transition-all ${
-          !isAnimalHospital
+          isDandysWorld
             ? "bg-[#FF1493] text-white shadow-lg shadow-[#FF1493]/50"
             : "bg-gray-700 text-gray-300 hover:bg-gray-600"
         }`}

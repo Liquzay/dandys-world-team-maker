@@ -185,7 +185,13 @@ export default function Home() {
       .map((toon) => {
         const displayName = toon.customName || toon.toonName;
         const trinketNames = toon.trinkets
-          .map((id) => TRINKETS.find((t) => t.id === id)?.name)
+          .map((id) => {
+            // Check official trinkets first
+            const official = TRINKETS.find((t) => t.id === id)?.name;
+            if (official) return official;
+            // Then check custom trinkets
+            return customTrinkets.find((t) => String(t.id) === String(id))?.name;
+          })
           .filter(Boolean)
           .join(", ");
 
